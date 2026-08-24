@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Typecheck and test before every commit.
+#
+# This exists because three separate find-and-replace passes shipped breakage
+# that a typecheck would have caught in seconds:
+#
+#   - `SynchedProvider` -> `cyncdProvider`. A lowercase JSX tag is a host
+#     element, not a component, so the provider silently never mounted and
+#     every `useCyncd()` threw at runtime.
+#   - `onChangeText` -> `onValueChangeText` on a TextInput. The email field
+#     stopped accepting input.
+#
+# Both are `tsc --noEmit` errors. Neither was noticed until the app was run by
+# hand. The gate is cheap — a few seconds — and it runs whether or not anyone
+# remembers to.
+#
+# To bypass in a genuine emergency: git commit --no-verify
+
+set -e
+
+# Only worth running when something that typechecks actually changed.
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(ts|tsx)$'; then
+  echo "pre-commit: typechecking and running tests..."
+  npm run --silent verify
+else
+  echo "pre-commit: no TypeScript staged, skipping verify."
+fi
