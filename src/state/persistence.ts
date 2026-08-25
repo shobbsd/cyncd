@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   ActiveNotification,
+  Flow,
   LogEntry,
   Reflection,
   SavedPlan,
@@ -20,8 +21,24 @@ export const STORAGE_KEY = 'cyncd.demo';
  * 2: the roles were renamed from alex/sam to shanice/darnell. A v1 blob would
  * otherwise fall through the role check and silently land on the primary user,
  * so a demo left mid-run as the partner would come back as the wrong person.
+ * 3: Phase 1 changes onboarding data and validates persisted flow values.
  */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+
+const FLOW_IDS: Flow[] = [
+  'splash',
+  'signup',
+  'onboarding',
+  'learning',
+  'invite',
+  'partnerOnboarding',
+  'paired',
+  'app',
+];
+
+function isFlow(value: unknown): value is Flow {
+  return typeof value === 'string' && FLOW_IDS.includes(value as Flow);
+}
 
 export function initialState(): CyncdState {
   return {
@@ -134,10 +151,7 @@ export function reconcile(raw: unknown): CyncdState {
 
   const state: CyncdState = {
     ...base,
-    flow:
-      typeof raw.flow === 'string'
-        ? (raw.flow as CyncdState['flow'])
-        : base.flow,
+    flow: isFlow(raw.flow) ? raw.flow : base.flow,
     account: {
       email: typeof account.email === 'string' ? account.email : null,
     },

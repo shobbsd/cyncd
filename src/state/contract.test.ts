@@ -25,7 +25,7 @@ import { SCHEMA_VERSION, STORAGE_KEY, initialState } from './persistence';
 describe('values consumed outside the type graph', () => {
   it('pins the storage key and schema version', () => {
     expect(STORAGE_KEY).toBe('cyncd.demo');
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
   });
 
   it('pins the role ids', () => {

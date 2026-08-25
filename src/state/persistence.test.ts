@@ -85,6 +85,12 @@ describe('reconcile', () => {
         .role,
     ).toBe('darnell');
   });
+
+  it('rejects an unknown stored flow instead of returning a blank shell', () => {
+    expect(
+      reconcile({ version: SCHEMA_VERSION, flow: 'no-longer-a-flow' }).flow,
+    ).toBe(initialState().flow);
+  });
 });
 
 describe('the role rename', () => {
