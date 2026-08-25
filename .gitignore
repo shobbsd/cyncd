@@ -1,5 +1,6 @@
 # Expo
 .expo
+.worktrees/
 __generated__
 web-build
 bare-apps
