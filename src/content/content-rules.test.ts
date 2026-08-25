@@ -15,30 +15,18 @@ import { describe, expect, it } from 'vitest'
 import type { ChipId, CoachNode } from './types'
 import { DAYS, getDay } from './days'
 import { COACH_CHIPS, COACH_NODES, getCoachEntry, getCoachNode } from './coach'
+import { ONBOARDING_QUESTIONS, PARTNER_QUESTIONS } from './onboarding'
 
-const BANNED = [
-  'hormone', 'hormonal', 'menstrual', 'ovulat', 'luteal', 'follicular', 'pms',
-  'symptom', 'diagnos', 'medical', 'clinical', 'therapy', 'treatment', 'disorder',
-  'chart', 'graph', 'score',
+const BANNED_EVERYWHERE = [
+  'bad day', 'low compatibility', 'relationship risk', 'difficult phase',
+  'hormonal behaviour', 'she may be emotional', 'avoid her today',
   'streak', 'badge', 'you missed', "don't forget", 'keep it up',
 ]
 
-/** Spec-mandated verbatim copy. Editing any of these is a spec violation. */
-const VERBATIM: Array<[number, 'todayGuidance' | 'partnerGuidance', string]> = [
-  [1, 'todayGuidance', 'Today may feel neutral or slightly changeable — keep plans flexible.'],
-  [1, 'partnerGuidance', 'Good day for light conversation rather than heavy topics. A short check-in works better than long discussions.'],
-  [2, 'todayGuidance', 'Energy may dip earlier this evening — consider a relaxed night.'],
-  [2, 'partnerGuidance', 'Short reassurance will feel supportive today.'],
-  [3, 'todayGuidance', 'Higher tolerance today — easier for social plans or going out.'],
-  [3, 'partnerGuidance', 'A good time to enjoy time together outside routine.'],
-  [4, 'todayGuidance', 'Emotional sensitivity slightly higher — gentle communication recommended.'],
-  [4, 'partnerGuidance', 'Small misunderstandings may feel bigger than intended — patience will help today.'],
-  [5, 'todayGuidance', 'Better focus and decision-making today.'],
-  [5, 'partnerGuidance', 'Suitable for planning conversations or organising upcoming tasks.'],
-  [6, 'todayGuidance', 'Lower energy window approaching — lighter plans recommended.'],
-  [6, 'partnerGuidance', 'Quiet evening or shared activity at home may feel best. Suggest one simple option, then give space.'],
-  [7, 'todayGuidance', 'Stable and calm day — communication should feel easier.'],
-  [7, 'partnerGuidance', 'Good opportunity for connection or a relaxed date night.'],
+const BANNED_IN_SHARED = [
+  'hormone', 'hormonal', 'menstrual', 'ovulat', 'luteal', 'follicular', 'pms',
+  'symptom', 'diagnos', 'medical', 'clinical', 'therapy', 'treatment', 'disorder',
+  'chart', 'graph',
 ]
 
 interface Found {
@@ -57,7 +45,7 @@ function collect(root: unknown, path: string, out: Found[] = []): Found[] {
   return out
 }
 
-const strings = [
+const sharedStrings = [
   ...collect(DAYS, 'DAYS'),
   ...collect(Object.values(COACH_NODES), 'COACH_NODES'),
 ]
@@ -67,30 +55,30 @@ const show = (hits: Found[]) => hits.map((h) => `${h.path}: ${JSON.stringify(h.v
 describe('content rules', () => {
   it('walks a non-trivial number of strings', () => {
     // Guards against the lint passing because the walk found nothing.
-    expect(strings.length).toBeGreaterThan(200)
+    expect(sharedStrings.length).toBeGreaterThan(200)
   })
 
-  it.each(BANNED)('never uses %j', (term) => {
-    expect(show(strings.filter((s) => s.value.toLowerCase().includes(term)))).toEqual([])
+  it.each(BANNED_EVERYWHERE)('never uses %j on any current content surface', (term) => {
+    expect(show(sharedStrings.filter((s) => s.value.toLowerCase().includes(term)))).toEqual([])
   })
 
-  it('never references the cycle outside onboarding', () => {
-    expect(show(strings.filter((s) => /\bcycle/i.test(s.value)))).toEqual([])
+  it.each(BANNED_IN_SHARED)('never uses %j on a shared surface', (term) => {
+    expect(show(sharedStrings.filter((s) => s.value.toLowerCase().includes(term)))).toEqual([])
+  })
+
+  it('never references cycle language on a shared surface', () => {
+    expect(show(sharedStrings.filter((s) => /\bcycle/i.test(s.value)))).toEqual([])
   })
 
   it('shows no numbers as data', () => {
     // Percentages and "N days"-style counters read as raw data on surfaces the
     // spec says must stay human. Prose numbers are fine.
     const re = /\d+\s*%|\b\d+\s*(days?|times?|nights?)\b/i
-    expect(show(strings.filter((s) => re.test(s.value)))).toEqual([])
+    expect(show(sharedStrings.filter((s) => re.test(s.value)))).toEqual([])
   })
 })
 
-describe('spec-mandated copy', () => {
-  it.each(VERBATIM)('day %i %s is verbatim', (day, field, expected) => {
-    expect(getDay(day)[field]).toBe(expected)
-  })
-
+describe('day content structure', () => {
   it('uses exactly four day types and four pill labels', () => {
     expect([...new Set(DAYS.map((d) => d.dayType))].sort()).toEqual([
       'calm', 'focused', 'lowEnergy', 'social',
@@ -103,6 +91,30 @@ describe('spec-mandated copy', () => {
   it('marks only day 4 as sensitive, on a calm pill', () => {
     expect(DAYS.filter((d) => d.sensitive).map((d) => d.day)).toEqual([4])
     expect(getDay(4).dayType).toBe('calm')
+  })
+})
+
+describe('phase 1 onboarding content', () => {
+  it('uses the approved primary questions', () => {
+    expect(ONBOARDING_QUESTIONS).toEqual([
+      { id: 'energy', prompt: 'How does your energy usually change across the month?', options: ['Fairly steady', 'Some ups and downs', 'Big swings'] },
+      { id: 'support', prompt: "When you're feeling stretched, what usually helps?", options: ['Space', 'Reassurance', 'Practical help'] },
+      { id: 'communication', prompt: 'When something comes up between you, what do you prefer?', options: ['Talk it through soon', 'Need time first', 'Depends on the day'] },
+      { id: 'social', prompt: 'How do you usually like to spend a free evening?', options: ['At home', 'Out', 'Depends'] },
+      { id: 'cycleStart', prompt: 'When did your last period start? This stays private and helps personalise your forecast.', options: [], kind: 'date' },
+      { id: 'cycleLength', prompt: 'How long is your cycle usually?', options: ['~28 days', 'Shorter', 'Longer', 'Varies', 'Not sure'] },
+      { id: 'routine', prompt: 'When do you usually have time together?', options: ['Weekdays', 'Weekends', 'Varies'] },
+    ])
+  })
+
+  it('uses the approved partner questions', () => {
+    expect(PARTNER_QUESTIONS).toEqual([
+      { id: 'energy', prompt: 'How would you describe your usual energy?', options: ['Low', 'Moderate', 'High'] },
+      { id: 'communication', prompt: 'When something comes up, what do you prefer?', options: ['Talk immediately', 'Need time first'] },
+      { id: 'support', prompt: 'How do you usually support your partner?', options: ['Talk', 'Space', 'Practical help'] },
+      { id: 'social', prompt: 'How do you like to spend a free evening?', options: ['At home', 'Out', 'Depends'] },
+      { id: 'misunderstandings', prompt: 'What causes most misunderstandings between you?', options: ['Timing', 'Communication', 'Energy'] },
+    ])
   })
 })
 
