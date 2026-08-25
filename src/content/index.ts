@@ -3,6 +3,7 @@ import type { DayType, Role, TabId } from './types';
 export * from './types';
 export * from './days';
 export * from './coach';
+export * from './cycle';
 export * from './onboarding';
 
 /** Tab order for the bottom bar. Labels here, styling and icons in the UI. */

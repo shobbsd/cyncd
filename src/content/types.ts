@@ -8,6 +8,29 @@
 
 export type Role = 'shanice' | 'darnell';
 
+export type CyclePhase = 'period' | 'follicular' | 'ovulatory' | 'luteal';
+
+export interface CycleSeed {
+  lastPeriodStart?: string;
+  cycleLength?: number;
+}
+
+export interface CycleOutlookDay {
+  date: string;
+  cycleDay: number;
+  phase: CyclePhase;
+}
+
+export type CyclePrediction =
+  | { kind: 'unavailable' }
+  | {
+      kind: 'predicted';
+      cycleDay: number;
+      phase: CyclePhase;
+      nextPeriodStart: string;
+      outlook: CycleOutlookDay[];
+    };
+
 /**
  * Four day types, because the spec defines exactly four pill colours.
  * Day 4 is a Calm day with `sensitive: true` — a gentler copy variant, not a
