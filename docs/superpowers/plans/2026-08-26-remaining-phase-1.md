@@ -38,6 +38,10 @@ and `src/app/index.tsx`.
   navigation module does not exist.
 - [ ] Add `forecast` to `TabId`; implement `tabsForRole(role)` and
   `tabForRole(role, tab)`; make `TabBar` receive the role-filtered list.
+- [ ] Replace `demo.currentDay` with a validated simulated ISO date (seeded at
+  `2026-08-25`) and make the DemoBar step that date by one day. Preserve the
+  existing day-derived compatibility output only where a legacy screen still
+  needs it; all Forecast, Score, and notification derivation reads the date.
 - [ ] In the app shell, render Forecast only for a valid tab; reconcile the
   active tab to `today` on role change; drop notification targets unavailable
   to the current role.
