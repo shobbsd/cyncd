@@ -71,4 +71,14 @@ describe('predictCycle', () => {
       nextPeriodStart: '2026-09-02',
     })
   })
+
+  it('prefers a more recent logged period start over the onboarding seed', () => {
+    expect(
+      predictCycle(
+        { lastPeriodStart: '2026-08-01', cycleLength: 28 },
+        '2026-08-25',
+        [{ id: 'cycle-1', date: '2026-08-20', period: 'start' }],
+      ),
+    ).toMatchObject({ kind: 'predicted', cycleDay: 6 })
+  })
 })

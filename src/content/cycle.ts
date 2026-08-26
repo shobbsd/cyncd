@@ -1,5 +1,6 @@
 import type {
   CycleOutlookDay,
+  CycleLogEntry,
   CyclePhase,
   CyclePrediction,
   CycleSeed,
@@ -52,9 +53,19 @@ function validCycleLength(value: unknown): value is number {
 export function predictCycle(
   seed: CycleSeed,
   simulatedDate: string,
+  logs: CycleLogEntry[] = [],
 ): CyclePrediction {
-  const periodStart = parseIsoDate(seed.lastPeriodStart);
   const currentDate = parseIsoDate(simulatedDate);
+  const loggedStart = logs
+    .filter(
+      (entry) =>
+        entry.period === 'start' &&
+        parseIsoDate(entry.date) !== null &&
+        currentDate !== null &&
+        entry.date <= simulatedDate,
+    )
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  const periodStart = parseIsoDate(loggedStart?.date ?? seed.lastPeriodStart);
   const cycleLength = seed.cycleLength ?? DEFAULT_CYCLE_LENGTH;
 
   if (!periodStart || !currentDate || !validCycleLength(cycleLength)) {

@@ -4,6 +4,7 @@ export * from './types';
 export * from './days';
 export * from './coach';
 export * from './cycle';
+export * from './forecast';
 export * from './phaseGuidance';
 export * from './onboarding';
 export * from './score';

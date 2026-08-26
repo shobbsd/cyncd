@@ -42,6 +42,23 @@ export interface CycleSeed {
   cycleLength?: number;
 }
 
+/** Private, date-addressed tracking record. Nothing partner-facing reads it. */
+export interface CycleLogEntry {
+  id: string;
+  date: string;
+  period?: 'start' | 'end';
+  flow?: 'light' | 'medium' | 'heavy';
+  mood?: string;
+  energy?: string;
+  pain?: string;
+  sleep?: string;
+  stress?: string;
+  physicalSymptoms?: string[];
+  emotionalSymptoms?: string[];
+  libido?: string;
+  notes?: string;
+}
+
 export interface CycleOutlookDay {
   date: string;
   cycleDay: number;
@@ -57,6 +74,15 @@ export type CyclePrediction =
       nextPeriodStart: string;
       outlook: CycleOutlookDay[];
     };
+
+export interface ForecastView {
+  title: string;
+  detail: string;
+  mood: string;
+  energy: string;
+  action: string;
+  outlook: CycleOutlookDay[];
+}
 
 /**
  * Four day types, because the spec defines exactly four pill colours.
