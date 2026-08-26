@@ -1,5 +1,6 @@
 import type {
   ChipId,
+  CycleLogEntry,
   LogEntry,
   OutputType,
   Role,
@@ -26,6 +27,9 @@ export type Action =
   | { type: 'savePlan'; day: number; text: string; share?: boolean }
   | { type: 'sharePlan'; id: string }
   | { type: 'completeScoreAction'; date: string }
+  | { type: 'upsertCycleLog'; entry: CycleLogEntry }
+  | { type: 'createSharedItem'; kind: 'note' | 'insight'; body: string; date: string }
+  | { type: 'revokeSharedItem'; id: string; date: string }
   | {
       type: 'addLog';
       chip: ChipId | null;
@@ -264,6 +268,43 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
               { date: action.date, completedBy: state.demo.role },
             ],
           };
+
+    case 'upsertCycleLog':
+      return {
+        ...state,
+        cycleLogs: [
+          action.entry,
+          ...state.cycleLogs.filter((entry) => entry.date !== action.entry.date),
+        ],
+      };
+
+    case 'createSharedItem': {
+      const id = nextId('shared', state.sharedItems);
+      return {
+        ...state,
+        sharedItems: [
+          ...state.sharedItems,
+          {
+            id,
+            author: state.demo.role,
+            kind: action.kind,
+            body: action.body,
+            sharedAt: action.date,
+            updatedAt: action.date,
+          },
+        ],
+      };
+    }
+
+    case 'revokeSharedItem':
+      return {
+        ...state,
+        sharedItems: state.sharedItems.map((item) =>
+          item.id === action.id && item.author === state.demo.role
+            ? { ...item, revokedAt: action.date, updatedAt: action.date }
+            : item,
+        ),
+      };
 
     case 'addLog': {
       const day = getDay(state.demo.currentDay);

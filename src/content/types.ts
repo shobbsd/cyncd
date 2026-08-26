@@ -255,6 +255,35 @@ export interface ScoreActionCompletion {
   completedBy: Role;
 }
 
+export interface SharedItem {
+  id: string;
+  author: Role;
+  kind: 'note' | 'insight';
+  body: string;
+  sharedAt: string;
+  updatedAt: string;
+  revokedAt?: string;
+}
+
+export interface CalendarEntry {
+  id: string;
+  date: string;
+  title: string;
+  kind: 'plan' | 'date' | 'note';
+  author: Role;
+  icon?: string;
+}
+
+export interface ReflectionEntry {
+  id: string;
+  author: Role;
+  date: string;
+  text: string;
+  signals: string[];
+  scoreFeedback?: number;
+  createdAt: string;
+}
+
 export interface LogEntry {
   id: string;
   /** ISO date string — when the entry was created. */
@@ -302,6 +331,10 @@ export interface CyncdState {
   sharing: { paused: boolean };
   savedPlans: SavedPlan[];
   scoreActionCompletions: ScoreActionCompletion[];
+  cycleLogs: CycleLogEntry[];
+  sharedItems: SharedItem[];
+  calendarEntries: CalendarEntry[];
+  reflectionEntries: ReflectionEntry[];
   logs: LogEntry[];
   reflections: Reflection[];
   /**

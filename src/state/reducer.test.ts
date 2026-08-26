@@ -113,6 +113,37 @@ describe('score action completion', () => {
   });
 });
 
+describe('private and shared records', () => {
+  it('upserts a private cycle log by date', () => {
+    const entry = {
+      id: 'cycle-1',
+      date: '2026-08-25',
+      mood: 'Steady',
+    };
+    const once = reducer(initialState(), { type: 'upsertCycleLog', entry });
+    const updated = reducer(once, {
+      type: 'upsertCycleLog',
+      entry: { ...entry, mood: 'Low-key' },
+    });
+    expect(updated.cycleLogs).toEqual([{ ...entry, mood: 'Low-key' }]);
+  });
+
+  it('lets an author revoke their own shared item', () => {
+    const shared = reducer(initialState(), {
+      type: 'createSharedItem',
+      kind: 'note',
+      body: 'A note for you',
+      date: '2026-08-25',
+    });
+    const revoked = reducer(shared, {
+      type: 'revokeSharedItem',
+      id: shared.sharedItems[0].id,
+      date: '2026-08-25',
+    });
+    expect(revoked.sharedItems[0].revokedAt).toBe('2026-08-25');
+  });
+});
+
 describe('day stepper', () => {
   it('moves the simulated date rather than stopping after a scripted week', () => {
     const stepped = reducer(

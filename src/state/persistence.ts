@@ -1,10 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type {
   ActiveNotification,
+  CalendarEntry,
+  CycleLogEntry,
   Flow,
   LogEntry,
   Reflection,
   ScoreActionCompletion,
+  SharedItem,
+  ReflectionEntry,
   SavedPlan,
   CyncdState,
   TabId,
@@ -59,6 +63,10 @@ export function initialState(): CyncdState {
     sharing: { paused: false },
     savedPlans: [],
     scoreActionCompletions: [],
+    cycleLogs: [],
+    sharedItems: [],
+    calendarEntries: [],
+    reflectionEntries: [],
     logs: [],
     reflections: [],
     notification: null,
@@ -134,6 +142,29 @@ function isScoreActionCompletion(value: unknown): value is ScoreActionCompletion
     /^\d{4}-\d{2}-\d{2}$/.test(value.date) &&
     (value.completedBy === 'shanice' || value.completedBy === 'darnell')
   );
+}
+
+function isCycleLogEntry(value: unknown): value is CycleLogEntry {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.date === 'string';
+}
+
+function isSharedItem(value: unknown): value is SharedItem {
+  return isRecord(value) && typeof value.id === 'string' &&
+    (value.author === 'shanice' || value.author === 'darnell') &&
+    (value.kind === 'note' || value.kind === 'insight') && typeof value.body === 'string' &&
+    typeof value.sharedAt === 'string' && typeof value.updatedAt === 'string';
+}
+
+function isCalendarEntry(value: unknown): value is CalendarEntry {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.date === 'string' &&
+    typeof value.title === 'string' && (value.author === 'shanice' || value.author === 'darnell') &&
+    (value.kind === 'plan' || value.kind === 'date' || value.kind === 'note');
+}
+
+function isReflectionEntry(value: unknown): value is ReflectionEntry {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.date === 'string' &&
+    typeof value.text === 'string' && Array.isArray(value.signals) &&
+    (value.author === 'shanice' || value.author === 'darnell') && typeof value.createdAt === 'string';
 }
 
 function isActiveNotification(value: unknown): value is ActiveNotification {
@@ -216,6 +247,10 @@ export function reconcile(raw: unknown): CyncdState {
       raw.scoreActionCompletions,
       isScoreActionCompletion,
     ),
+    cycleLogs: keepValid('cycleLogs', raw.cycleLogs, isCycleLogEntry),
+    sharedItems: keepValid('sharedItems', raw.sharedItems, isSharedItem),
+    calendarEntries: keepValid('calendarEntries', raw.calendarEntries, isCalendarEntry),
+    reflectionEntries: keepValid('reflectionEntries', raw.reflectionEntries, isReflectionEntry),
     logs: keepValid('logs', raw.logs, isLogEntry),
     reflections: keepValid('reflections', raw.reflections, isReflection),
     notification: isActiveNotification(raw.notification)
