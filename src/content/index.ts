@@ -7,10 +7,12 @@ export * from './cycle';
 export * from './phaseGuidance';
 export * from './onboarding';
 export * from './score';
+export * from './tabs';
 
 /** Tab order for the bottom bar. Labels here, styling and icons in the UI. */
 export const TABS: { id: TabId; label: string }[] = [
   { id: 'today', label: 'Today' },
+  { id: 'forecast', label: 'Forecast' },
   { id: 'partner', label: 'Partner' },
   { id: 'plan', label: 'Plan' },
   { id: 'reflect', label: 'Reflect' },

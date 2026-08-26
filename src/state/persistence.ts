@@ -42,6 +42,12 @@ function isFlow(value: unknown): value is Flow {
   return typeof value === 'string' && FLOW_IDS.includes(value as Flow);
 }
 
+function simulatedDateFor(day: number): string {
+  const anchor = new Date('2026-08-25T00:00:00.000Z');
+  anchor.setUTCDate(anchor.getUTCDate() + day - FIRST_DAY);
+  return anchor.toISOString().slice(0, 10);
+}
+
 export function initialState(): CyncdState {
   return {
     version: SCHEMA_VERSION,
@@ -49,7 +55,7 @@ export function initialState(): CyncdState {
     account: { email: null },
     onboarding: { answers: {}, skipped: [], completed: false },
     partner: { joined: false, answers: {}, inviteCode: null },
-    demo: { currentDay: FIRST_DAY, role: 'shanice' },
+    demo: { currentDay: FIRST_DAY, simulatedDate: '2026-08-25', role: 'shanice' },
     sharing: { paused: false },
     savedPlans: [],
     scoreActionCompletions: [],
@@ -189,6 +195,16 @@ export function reconcile(raw: unknown): CyncdState {
         typeof demo.currentDay === 'number' ? demo.currentDay : FIRST_DAY,
       ),
       role: demo.role === 'darnell' ? 'darnell' : 'shanice',
+      simulatedDate:
+        typeof demo.simulatedDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(demo.simulatedDate)
+          ? demo.simulatedDate
+          : simulatedDateFor(
+              clampDay(
+                typeof demo.currentDay === 'number'
+                  ? demo.currentDay
+                  : FIRST_DAY,
+              ),
+            ),
     },
     sharing: { paused: sharing.paused === true },
     // Element-level checks, not a blanket cast. A single malformed record is

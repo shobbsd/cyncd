@@ -50,7 +50,11 @@ describe('reconcile', () => {
     };
     const state = reconcile(partial);
     expect(state.flow).toBe('app');
-    expect(state.demo).toEqual({ currentDay: 4, role: 'shanice' });
+    expect(state.demo).toEqual({
+      currentDay: 4,
+      simulatedDate: '2026-08-28',
+      role: 'shanice',
+    });
     expect(state.onboarding).toEqual({
       answers: {},
       skipped: [],
@@ -171,7 +175,11 @@ describe('load', () => {
     const state = {
       ...initialState(),
       flow: 'app' as const,
-      demo: { currentDay: 5, role: 'darnell' as const },
+      demo: {
+        currentDay: 5,
+        simulatedDate: '2026-08-29',
+        role: 'darnell' as const,
+      },
       sharing: { paused: true },
     };
     await save(state, store);

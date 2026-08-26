@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { FIRST_DAY, LAST_DAY, ROLE_LABELS, type Role } from '../content'
+import { ROLE_LABELS, type Role } from '../content'
 import { color, font, radius, shadow, space, tap } from '../theme/tokens'
 
 /** Object key order is the display order: primary user first. */
@@ -16,13 +16,13 @@ const ROLES = Object.keys(ROLE_LABELS) as Role[]
  */
 export function DemoBar({
   role,
-  day,
+  date,
   onRole,
   onStep,
   onReset,
 }: {
   role: Role
-  day: number
+  date: string
   onRole: (role: Role) => void
   onStep: (delta: number) => void
   onReset: () => void
@@ -62,26 +62,22 @@ export function DemoBar({
           </View>
 
           <View style={styles.group}>
-            <Text style={styles.label}>Day</Text>
+            <Text style={styles.label}>Demo date</Text>
             <View style={styles.stepper}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Previous day"
-                disabled={day === FIRST_DAY}
                 onPress={() => onStep(-1)}
-                style={[styles.stepBtn, day === FIRST_DAY && styles.stepBtnOff]}
+                style={styles.stepBtn}
               >
                 <Text style={styles.stepGlyph}>−</Text>
               </Pressable>
-              <Text style={styles.day}>
-                {day} of {LAST_DAY}
-              </Text>
+              <Text style={styles.day}>{date}</Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Next day"
-                disabled={day === LAST_DAY}
                 onPress={() => onStep(1)}
-                style={[styles.stepBtn, day === LAST_DAY && styles.stepBtnOff]}
+                style={styles.stepBtn}
               >
                 <Text style={styles.stepGlyph}>+</Text>
               </Pressable>

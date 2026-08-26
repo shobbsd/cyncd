@@ -114,6 +114,21 @@ describe('score action completion', () => {
 });
 
 describe('day stepper', () => {
+  it('moves the simulated date rather than stopping after a scripted week', () => {
+    const stepped = reducer(
+      {
+        ...initialState(),
+        demo: {
+          currentDay: 7,
+          simulatedDate: '2026-08-25',
+          role: 'shanice',
+        },
+      },
+      { type: 'stepDay', delta: 1 },
+    );
+    expect(stepped.demo.simulatedDate).toBe('2026-08-26');
+  });
+
   it('clamps at both ends of the scripted week', () => {
     const app = run(...TO_APP);
     expect(reducer(app, { type: 'setDay', day: 99 }).demo.currentDay).toBe(7);

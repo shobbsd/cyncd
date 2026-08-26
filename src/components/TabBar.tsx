@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { TABS, type TabId } from '../content';
+import { tabsForRole, type Role, type TabId } from '../content';
 import { color, font, space } from '../theme/tokens';
 
 const ICONS: Record<TabId, ReactNode> = {
@@ -10,6 +10,12 @@ const ICONS: Record<TabId, ReactNode> = {
     <>
       <Circle cx={12} cy={12} r={4.2} />
       <Path d="M12 2.6v2.2M12 19.2v2.2M4.4 12H2.2M21.8 12h-2.2M6.6 6.6 5 5M19 19l-1.6-1.6M17.4 6.6 19 5M5 19l1.6-1.6" />
+    </>
+  ),
+  forecast: (
+    <>
+      <Path d="M4 17.5 9.2 12l3.4 3.2L20 7.5" />
+      <Path d="M16.5 7.5H20v3.5" />
     </>
   ),
   partner: (
@@ -39,9 +45,11 @@ const ICONS: Record<TabId, ReactNode> = {
  */
 export function TabBar({
   active,
+  role,
   onValueChange,
 }: {
   active: TabId;
+  role: Role;
   onValueChange: (tab: TabId) => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -51,7 +59,7 @@ export function TabBar({
       accessibilityRole="tablist"
       style={[styles.bar, { paddingBottom: insets.bottom }]}
     >
-      {TABS.map((tab) => {
+      {tabsForRole(role).map((tab) => {
         const current = tab.id === active;
         return (
           <Pressable

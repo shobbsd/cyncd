@@ -37,6 +37,7 @@ describe('values consumed outside the type graph', () => {
   it('pins the tab ids, which are deep-link targets', () => {
     expect(TABS.map((tab) => tab.id)).toEqual([
       'today',
+      'forecast',
       'partner',
       'plan',
       'reflect',

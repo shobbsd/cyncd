@@ -77,7 +77,7 @@ export interface PhaseGuidance {
   actions: string[];
 }
 
-export type TabId = 'today' | 'partner' | 'plan' | 'reflect';
+export type TabId = 'today' | 'forecast' | 'partner' | 'plan' | 'reflect';
 
 /**
  * How the partner is being advised to show up today. Drives which approach the
@@ -272,7 +272,7 @@ export interface CyncdState {
     answers: Record<string, string>;
     inviteCode: string | null;
   };
-  demo: { currentDay: number; role: Role };
+  demo: { currentDay: number; simulatedDate?: string; role: Role };
   sharing: { paused: boolean };
   savedPlans: SavedPlan[];
   scoreActionCompletions: ScoreActionCompletion[];

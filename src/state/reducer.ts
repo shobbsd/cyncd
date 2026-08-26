@@ -95,6 +95,13 @@ function withDay(state: CyncdState, day: number): CyncdState {
   };
 }
 
+function addDays(isoDate: string, delta: number): string {
+  const date = new Date(`${isoDate}T00:00:00.000Z`);
+  return new Date(date.getTime() + delta * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+
 function enterApp(state: CyncdState): CyncdState {
   return {
     ...state,
@@ -190,8 +197,19 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
     case 'setDay':
       return withDay(state, action.day);
 
-    case 'stepDay':
-      return withDay(state, state.demo.currentDay + action.delta);
+    case 'stepDay': {
+      const next = withDay(state, state.demo.currentDay + action.delta);
+      return {
+        ...next,
+        demo: {
+          ...next.demo,
+          simulatedDate: addDays(
+            state.demo.simulatedDate ?? '2026-08-25',
+            action.delta,
+          ),
+        },
+      };
+    }
 
     case 'togglePauseSharing':
       return { ...state, sharing: { paused: !state.sharing.paused } };

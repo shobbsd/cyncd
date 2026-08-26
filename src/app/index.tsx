@@ -12,6 +12,7 @@ import {
   PARTNER_QUESTIONS,
   ROLE_NAMES,
   type TabId,
+  tabForRole,
 } from '../content';
 import { Invite } from '../screens/Invite';
 import { Partner } from '../screens/Partner';
@@ -20,6 +21,7 @@ import { QuestionFlow } from '../screens/QuestionFlow';
 import { Reflect } from '../screens/Reflect';
 import { Signup, Splash } from '../screens/Splash';
 import { Today } from '../screens/Today';
+import { View as ScreenView } from 'react-native';
 import { CyncdConfirm, Learning } from '../screens/Transitions';
 import { useCyncd } from '../state';
 import { color, font, space } from '../theme/tokens';
@@ -41,9 +43,13 @@ export default function App() {
     if (state.flow !== 'app') setTab('today');
   }, [state.flow]);
 
+  useEffect(() => {
+    if (tabForRole(state.demo.role, tab) === null) setTab('today');
+  }, [state.demo.role, tab]);
+
   const openNotification = () => {
     const target = actions.openNotification();
-    if (target !== null) setTab(target);
+    if (target !== null && tabForRole(state.demo.role, target) !== null) setTab(target);
   };
 
   const coachChip = COACH_CHIPS.find((chip) => chip.id === coach.chip);
@@ -63,7 +69,7 @@ export default function App() {
     <SafeAreaView style={styles.frame} edges={['top']}>
       <DemoBar
         role={state.demo.role}
-        day={state.demo.currentDay}
+        date={state.demo.simulatedDate ?? '2026-08-25'}
         onRole={actions.setRole}
         onStep={actions.stepDay}
         onReset={actions.resetDemo}
@@ -93,12 +99,13 @@ export default function App() {
             {tab === 'today' ? (
               <Today onOpenCoach={coach.open} onOpenScore={() => setTab('partner')} />
             ) : null}
+            {tab === 'forecast' && state.demo.role === 'shanice' ? <ScreenView /> : null}
             {tab === 'partner' ? <Partner /> : null}
             {tab === 'plan' ? <Plan /> : null}
             {tab === 'reflect' ? <Reflect /> : null}
           </ScrollView>
 
-          <TabBar active={tab} onValueChange={setTab} />
+          <TabBar active={tab} role={state.demo.role} onValueChange={setTab} />
         </>
       ) : (
         <ScrollView contentContainerStyle={styles.flowScroll}>

@@ -21,7 +21,6 @@ import {
   preferredPlans,
 } from '../content';
 
-const DEMO_ANCHOR_DATE = '2026-08-25';
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** What the Partner tab should render, for the role currently selected. */
@@ -98,10 +97,7 @@ function scoreForDate(state: CyncdState, date: string): ScoreResult {
 export function derive(state: CyncdState): Derived {
   const today = getDay(state.demo.currentDay);
   const answered = Object.keys(state.onboarding.answers).length > 0;
-  const simulatedDate = addDays(
-    DEMO_ANCHOR_DATE,
-    state.demo.currentDay - 1,
-  );
+  const simulatedDate = state.demo.simulatedDate ?? '2026-08-25';
   const cycle = predictCycle(
     {
       lastPeriodStart: state.onboarding.answers.cycleStart,
