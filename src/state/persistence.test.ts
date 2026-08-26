@@ -234,6 +234,20 @@ describe('malformed records', () => {
     expect(state.logs).toEqual([]);
     expect(state.savedPlans).toEqual([]);
   });
+
+  it('drops malformed score action completion entries', () => {
+    const state = reconcile({
+      version: SCHEMA_VERSION,
+      scoreActionCompletions: [
+        { date: '2026-08-25', completedBy: 'shanice' },
+        { date: '25-08-2026', completedBy: 'shanice' },
+        { date: '2026-08-26', completedBy: 'nobody' },
+      ],
+    });
+    expect(state.scoreActionCompletions).toEqual([
+      { date: '2026-08-25', completedBy: 'shanice' },
+    ]);
+  });
 });
 
 describe('silent recoveries are not silent', () => {

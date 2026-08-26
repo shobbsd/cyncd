@@ -25,6 +25,7 @@ export type Action =
   | { type: 'togglePauseSharing' }
   | { type: 'savePlan'; day: number; text: string; share?: boolean }
   | { type: 'sharePlan'; id: string }
+  | { type: 'completeScoreAction'; date: string }
   | {
       type: 'addLog';
       chip: ChipId | null;
@@ -232,6 +233,19 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
           plan.id === action.id ? { ...plan, shared: true } : plan,
         ),
       };
+
+    case 'completeScoreAction':
+      return state.scoreActionCompletions.some(
+        (entry) => entry.date === action.date,
+      )
+        ? state
+        : {
+            ...state,
+            scoreActionCompletions: [
+              ...state.scoreActionCompletions,
+              { date: action.date, completedBy: state.demo.role },
+            ],
+          };
 
     case 'addLog': {
       const day = getDay(state.demo.currentDay);

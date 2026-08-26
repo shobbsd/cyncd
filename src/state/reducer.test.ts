@@ -97,6 +97,22 @@ describe('onboarding answers', () => {
   });
 });
 
+describe('score action completion', () => {
+  it('records the current role once per simulated date', () => {
+    const completed = reducer(initialState(), {
+      type: 'completeScoreAction',
+      date: '2026-08-25',
+    });
+    expect(completed.scoreActionCompletions).toEqual([
+      { date: '2026-08-25', completedBy: 'shanice' },
+    ]);
+
+    expect(
+      reducer(completed, { type: 'completeScoreAction', date: '2026-08-25' }),
+    ).toBe(completed);
+  });
+});
+
 describe('day stepper', () => {
   it('clamps at both ends of the scripted week', () => {
     const app = run(...TO_APP);

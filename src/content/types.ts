@@ -8,6 +8,33 @@
 
 export type Role = 'shanice' | 'darnell';
 
+export type ScoreBand =
+  | 'naturallyAligned'
+  | 'gentlyConnected'
+  | 'differentRhythms'
+  | 'extraCare';
+
+export interface ScoreResult {
+  percentage: number;
+  band: ScoreBand;
+  label: string;
+  line: string;
+  action: string;
+  confidence: string;
+  components: {
+    communication: number;
+    energyAndCapacity: number;
+    completedAction: number;
+    accuracyFeedback: number;
+  };
+}
+
+export interface ScoreHistoryEntry {
+  date: string;
+  percentage: number;
+  label: string;
+}
+
 export type CyclePhase = 'period' | 'follicular' | 'ovulatory' | 'luteal';
 
 export interface CycleSeed {
@@ -37,6 +64,18 @@ export type CyclePrediction =
  * fifth colour.
  */
 export type DayType = 'calm' | 'lowEnergy' | 'social' | 'focused';
+
+export interface PhaseGuidance {
+  kind: 'phase' | 'trait';
+  dayType: DayType;
+  label: string;
+  todayGuidance: string;
+  partnerGuidance: string;
+  reassurance: string;
+  why: string;
+  approach: SupportApproach;
+  actions: string[];
+}
 
 export type TabId = 'today' | 'partner' | 'plan' | 'reflect';
 
@@ -185,6 +224,11 @@ export interface SavedPlan {
   shared: boolean;
 }
 
+export interface ScoreActionCompletion {
+  date: string;
+  completedBy: Role;
+}
+
 export interface LogEntry {
   id: string;
   /** ISO date string — when the entry was created. */
@@ -231,6 +275,7 @@ export interface CyncdState {
   demo: { currentDay: number; role: Role };
   sharing: { paused: boolean };
   savedPlans: SavedPlan[];
+  scoreActionCompletions: ScoreActionCompletion[];
   logs: LogEntry[];
   reflections: Reflection[];
   /**

@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { DayPill } from '../components/DayPill';
-import { WeekStrip } from '../components/WeekStrip';
+import { ScoreCard } from '../components/ScoreCard';
 import { WhyDisclosure } from '../components/WhyDisclosure';
 import {
   Card,
@@ -24,11 +24,13 @@ import { space } from '../theme/tokens';
  */
 export function Today({
   onOpenCoach,
+  onOpenScore,
 }: {
   onOpenCoach: (chip: ChipId) => void;
+  onOpenScore: () => void;
 }) {
-  const { state, actions, derived, coach } = useCyncd();
-  const { today, weekStrip, starterNote } = derived;
+  const { state, derived, coach } = useCyncd();
+  const { guidance, score, starterNote } = derived;
   const viewingAsPartner = state.demo.role === 'darnell';
 
   return (
@@ -38,14 +40,16 @@ export function Today({
           <Eyebrow>
             {viewingAsPartner ? `${ROLE_NAMES.shanice}'s day` : 'Today'}
           </Eyebrow>
-          <DayPill dayType={today.dayType} label={today.label} />
+          <DayPill dayType={guidance.dayType} label={guidance.label} />
         </Row>
 
-        <Guidance>{today.todayGuidance}</Guidance>
-        <Muted>{today.reassurance}</Muted>
+        <Guidance>{guidance.todayGuidance}</Guidance>
+        <Muted>{guidance.reassurance}</Muted>
 
-        <WhyDisclosure why={today.why} />
+        <WhyDisclosure why={guidance.why} />
       </Card>
+
+      <ScoreCard score={score} compact onOpen={onOpenScore} />
 
       {starterNote === null ? null : <Empty>{starterNote}</Empty>}
 
@@ -67,12 +71,6 @@ export function Today({
           ))}
         </ScrollView>
       </View>
-
-      <WeekStrip
-        week={weekStrip}
-        currentDay={state.demo.currentDay}
-        onSelect={actions.setDay}
-      />
     </View>
   );
 }

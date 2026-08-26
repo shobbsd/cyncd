@@ -28,6 +28,7 @@ export interface Actions {
   togglePauseSharing(): void;
   savePlan(input: { day: number; text: string; share?: boolean }): void;
   sharePlan(id: string): void;
+  completeScoreAction(date: string): void;
   addReflection(accuracy: number, mood?: string): void;
   dismissNotification(): void;
   /** Clears the banner and returns where to navigate. */

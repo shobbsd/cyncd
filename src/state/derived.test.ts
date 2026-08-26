@@ -84,6 +84,69 @@ describe('skipped onboarding', () => {
   });
 });
 
+describe('score and phase guidance', () => {
+  const scoreReady = joined({
+    onboarding: {
+      answers: {
+        cycleStart: '2026-08-01',
+        cycleLength: '~28 days',
+        support: 'Space',
+        communication: 'Need time first',
+        energy: 'Fairly steady',
+        social: 'At home',
+      },
+      skipped: [],
+      completed: true,
+    },
+    partner: {
+      joined: true,
+      inviteCode: 'cyncd-ABC234',
+      answers: {
+        support: 'Space',
+        communication: 'Need time first',
+        energy: 'Moderate',
+        social: 'At home',
+      },
+    },
+  });
+
+  it('derives the same shared score for both perspectives', () => {
+    const shanice = derive(scoreReady);
+    const darnell = derive({
+      ...scoreReady,
+      demo: { currentDay: 1, role: 'darnell' },
+    });
+
+    expect(shanice.score).toEqual(darnell.score);
+    expect(shanice.guidance.kind).toBe('phase');
+    expect(shanice.scoreHistory).toHaveLength(7);
+  });
+
+  it('uses trait guidance without a cycle date', () => {
+    expect(derive(joined()).guidance.kind).toBe('trait');
+  });
+
+  it('never includes private cycle details in partner-facing score output', () => {
+    const partnerScore = derive({
+      ...scoreReady,
+      demo: { currentDay: 1, role: 'darnell' },
+    }).partnerScore;
+
+    expect(JSON.stringify(partnerScore)).not.toMatch(
+      /cycle|period|follicular|ovulatory|luteal|symptom/i,
+    );
+  });
+
+  it('raises the current score after the action is completed', () => {
+    const before = derive(scoreReady).score.percentage;
+    const completed = reducer(scoreReady, {
+      type: 'completeScoreAction',
+      date: '2026-08-25',
+    });
+    expect(derive(completed).score.percentage).toBeGreaterThan(before);
+  });
+});
+
 describe('plan shortlist', () => {
   it('shows three of the day’s pool, not all five', () => {
     const derived = derive(joined());

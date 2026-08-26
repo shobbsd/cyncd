@@ -16,6 +16,8 @@ import type { ChipId, CoachNode } from './types'
 import { DAYS, getDay } from './days'
 import { COACH_CHIPS, COACH_NODES, getCoachEntry, getCoachNode } from './coach'
 import { ONBOARDING_QUESTIONS, PARTNER_QUESTIONS } from './onboarding'
+import { PHASE_GUIDANCE, TRAIT_GUIDANCE } from './phaseGuidance'
+import { SCORE_BANDS } from './score'
 
 const BANNED_EVERYWHERE = [
   'bad day', 'low compatibility', 'relationship risk', 'difficult phase',
@@ -48,6 +50,9 @@ function collect(root: unknown, path: string, out: Found[] = []): Found[] {
 const sharedStrings = [
   ...collect(DAYS, 'DAYS'),
   ...collect(Object.values(COACH_NODES), 'COACH_NODES'),
+  ...collect(PHASE_GUIDANCE, 'PHASE_GUIDANCE'),
+  ...collect(TRAIT_GUIDANCE, 'TRAIT_GUIDANCE'),
+  ...collect(SCORE_BANDS, 'SCORE_BANDS'),
 ]
 
 const show = (hits: Found[]) => hits.map((h) => `${h.path}: ${JSON.stringify(h.value)}`)
@@ -115,6 +120,14 @@ describe('phase 1 onboarding content', () => {
       { id: 'social', prompt: 'How do you like to spend a free evening?', options: ['At home', 'Out', 'Depends'] },
       { id: 'misunderstandings', prompt: 'What causes most misunderstandings between you?', options: ['Timing', 'Communication', 'Energy'] },
     ])
+  })
+})
+
+describe('score bands', () => {
+  it('always pairs a score band with a practical action', () => {
+    for (const band of Object.values(SCORE_BANDS)) {
+      expect(band.action).not.toBe('')
+    }
   })
 })
 

@@ -90,7 +90,9 @@ export default function App() {
               />
             )}
 
-            {tab === 'today' ? <Today onOpenCoach={coach.open} /> : null}
+            {tab === 'today' ? (
+              <Today onOpenCoach={coach.open} onOpenScore={() => setTab('partner')} />
+            ) : null}
             {tab === 'partner' ? <Partner /> : null}
             {tab === 'plan' ? <Plan /> : null}
             {tab === 'reflect' ? <Reflect /> : null}

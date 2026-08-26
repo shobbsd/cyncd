@@ -83,6 +83,8 @@ export function CyncdProvider({ children }: { children: ReactNode }) {
       togglePauseSharing: () => dispatch({ type: 'togglePauseSharing' }),
       savePlan: (input) => dispatch({ type: 'savePlan', ...input }),
       sharePlan: (id) => dispatch({ type: 'sharePlan', id }),
+      completeScoreAction: (date) =>
+        dispatch({ type: 'completeScoreAction', date }),
       addReflection: (accuracy, mood) =>
         dispatch({ type: 'addReflection', accuracy, mood }),
       dismissNotification: () => dispatch({ type: 'dismissNotification' }),

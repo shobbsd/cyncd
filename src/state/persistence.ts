@@ -4,6 +4,7 @@ import type {
   Flow,
   LogEntry,
   Reflection,
+  ScoreActionCompletion,
   SavedPlan,
   CyncdState,
   TabId,
@@ -22,8 +23,9 @@ export const STORAGE_KEY = 'cyncd.demo';
  * otherwise fall through the role check and silently land on the primary user,
  * so a demo left mid-run as the partner would come back as the wrong person.
  * 3: Phase 1 changes onboarding data and validates persisted flow values.
+ * 4: Score action completion is persisted as shared behaviour.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 const FLOW_IDS: Flow[] = [
   'splash',
@@ -50,6 +52,7 @@ export function initialState(): CyncdState {
     demo: { currentDay: FIRST_DAY, role: 'shanice' },
     sharing: { paused: false },
     savedPlans: [],
+    scoreActionCompletions: [],
     logs: [],
     reflections: [],
     notification: null,
@@ -118,6 +121,15 @@ function isReflection(value: unknown): value is Reflection {
   );
 }
 
+function isScoreActionCompletion(value: unknown): value is ScoreActionCompletion {
+  return (
+    isRecord(value) &&
+    typeof value.date === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value.date) &&
+    (value.completedBy === 'shanice' || value.completedBy === 'darnell')
+  );
+}
+
 function isActiveNotification(value: unknown): value is ActiveNotification {
   return (
     isRecord(value) &&
@@ -183,6 +195,11 @@ export function reconcile(raw: unknown): CyncdState {
     // enough to break a render, and dropping it is always better than a white
     // screen mid-demo — which is the whole reason `version` exists.
     savedPlans: keepValid('savedPlans', raw.savedPlans, isSavedPlan),
+    scoreActionCompletions: keepValid(
+      'scoreActionCompletions',
+      raw.scoreActionCompletions,
+      isScoreActionCompletion,
+    ),
     logs: keepValid('logs', raw.logs, isLogEntry),
     reflections: keepValid('reflections', raw.reflections, isReflection),
     notification: isActiveNotification(raw.notification)

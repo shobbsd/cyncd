@@ -4,7 +4,9 @@ export * from './types';
 export * from './days';
 export * from './coach';
 export * from './cycle';
+export * from './phaseGuidance';
 export * from './onboarding';
+export * from './score';
 
 /** Tab order for the bottom bar. Labels here, styling and icons in the UI. */
 export const TABS: { id: TabId; label: string }[] = [
