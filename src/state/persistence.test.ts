@@ -256,6 +256,73 @@ describe('malformed records', () => {
       { date: '2026-08-25', completedBy: 'shanice' },
     ]);
   });
+
+  it('keeps valid phase-one records while dropping malformed siblings', () => {
+    const state = reconcile({
+      version: SCHEMA_VERSION,
+      cycleLogs: [
+        { id: 'cycle-1', date: '2026-08-25', period: 'start' },
+        { id: 'cycle-2', date: 'not-an-iso-date' },
+      ],
+      sharedItems: [
+        {
+          id: 'shared-1',
+          author: 'shanice',
+          kind: 'need',
+          body: 'A quiet evening would help.',
+          sharedAt: '2026-08-25',
+          updatedAt: '2026-08-25',
+        },
+        {
+          id: 'shared-2',
+          author: 'nobody',
+          kind: 'note',
+          body: 'Invalid author',
+          sharedAt: '2026-08-25',
+          updatedAt: '2026-08-25',
+        },
+      ],
+      calendarEntries: [
+        {
+          id: 'calendar-1',
+          date: '2026-08-30',
+          title: 'Dinner',
+          kind: 'date',
+          author: 'darnell',
+        },
+        {
+          id: 'calendar-2',
+          date: '30-08-2026',
+          title: 'Invalid date',
+          kind: 'date',
+          author: 'darnell',
+        },
+      ],
+      reflectionEntries: [
+        {
+          id: 'reflection-entry-1',
+          author: 'shanice',
+          date: '2026-08-25',
+          text: 'We felt connected.',
+          signals: ['connection'],
+          createdAt: '2026-08-25T20:00:00.000Z',
+        },
+        {
+          id: 'reflection-entry-2',
+          author: 'shanice',
+          date: '2026-08-25',
+          text: 'Bad signals',
+          signals: 'connection',
+          createdAt: '2026-08-25T20:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(state.cycleLogs).toHaveLength(1);
+    expect(state.sharedItems).toHaveLength(1);
+    expect(state.calendarEntries).toHaveLength(1);
+    expect(state.reflectionEntries).toHaveLength(1);
+  });
 });
 
 describe('silent recoveries are not silent', () => {

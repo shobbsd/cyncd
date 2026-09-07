@@ -15,13 +15,14 @@ import {
   tabForRole,
 } from '../content';
 import { Invite } from '../screens/Invite';
+import { Forecast } from '../screens/Forecast';
 import { Partner } from '../screens/Partner';
 import { Plan } from '../screens/Plan';
 import { QuestionFlow } from '../screens/QuestionFlow';
 import { Reflect } from '../screens/Reflect';
 import { Signup, Splash } from '../screens/Splash';
 import { Today } from '../screens/Today';
-import { View as ScreenView } from 'react-native';
+import { Welcome } from '../screens/Welcome';
 import { CyncdConfirm, Learning } from '../screens/Transitions';
 import { useCyncd } from '../state';
 import { color, font, space } from '../theme/tokens';
@@ -37,10 +38,14 @@ import { color, font, space } from '../theme/tokens';
 export default function App() {
   const { state, actions, coach, hydrated } = useCyncd();
   const [tab, setTab] = useState<TabId>('today');
+  const [welcomed, setWelcomed] = useState(false);
 
   // Reset picks the app up at the splash; the tab should not survive it.
   useEffect(() => {
-    if (state.flow !== 'app') setTab('today');
+    if (state.flow !== 'app') {
+      setTab('today');
+      setWelcomed(false);
+    }
   }, [state.flow]);
 
   useEffect(() => {
@@ -75,7 +80,9 @@ export default function App() {
         onReset={actions.resetDemo}
       />
 
-      {state.flow === 'app' ? (
+      {state.flow === 'app' && !welcomed ? (
+        <Welcome onContinue={() => setWelcomed(true)} />
+      ) : state.flow === 'app' ? (
         <>
           <View style={styles.appbar}>
             <BrandLockup />
@@ -99,7 +106,7 @@ export default function App() {
             {tab === 'today' ? (
               <Today onOpenCoach={coach.open} onOpenScore={() => setTab('partner')} />
             ) : null}
-            {tab === 'forecast' && state.demo.role === 'shanice' ? <ScreenView /> : null}
+            {tab === 'forecast' && state.demo.role === 'shanice' ? <Forecast /> : null}
             {tab === 'partner' ? <Partner /> : null}
             {tab === 'plan' ? <Plan /> : null}
             {tab === 'reflect' ? <Reflect /> : null}

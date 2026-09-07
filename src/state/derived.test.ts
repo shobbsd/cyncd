@@ -145,6 +145,127 @@ describe('score and phase guidance', () => {
     });
     expect(derive(completed).score.percentage).toBeGreaterThan(before);
   });
+
+  it('uses bounded optional numeric feedback without using reflection text', () => {
+    const feedback = {
+      id: 'reflection-entry-1',
+      author: 'shanice' as const,
+      date: '2026-08-25',
+      text: 'This private text must not affect the score.',
+      signals: [],
+      scoreFeedback: 5,
+      createdAt: '2026-08-25T20:00:00.000Z',
+    };
+    const without = derive(scoreReady).score.percentage;
+    const withFeedback = derive({
+      ...scoreReady,
+      reflectionEntries: [feedback],
+    }).score.percentage;
+
+    expect(withFeedback).toBeGreaterThan(without);
+  });
+
+  it('labels the score as predicted until both people have enough feedback', () => {
+    expect(derive(scoreReady).score.confidence).toBe(
+      'Today’s predicted cyncd Score.',
+    );
+  });
+});
+
+describe('private forecast', () => {
+  it('uses a logged period start ahead of the onboarding seed', () => {
+    const state = joined({
+      onboarding: {
+        answers: { cycleStart: '2026-08-01', cycleLength: '~28 days' },
+        skipped: [],
+        completed: true,
+      },
+      cycleLogs: [
+        { id: 'cycle-1', date: '2026-08-20', period: 'start' },
+      ],
+    });
+
+    expect(derive(state).forecast).toMatchObject({
+      title: 'Your next period is expected 2026-09-17',
+      action: 'Track how you feel',
+    });
+  });
+});
+
+describe('explicit partner sharing', () => {
+  const shared = [
+    {
+      id: 'shared-1',
+      author: 'shanice' as const,
+      kind: 'need' as const,
+      body: 'A quiet evening would help.',
+      sharedAt: '2026-08-25',
+      updatedAt: '2026-08-25',
+    },
+    {
+      id: 'shared-2',
+      author: 'darnell' as const,
+      kind: 'note' as const,
+      body: 'I can make dinner.',
+      sharedAt: '2026-08-25',
+      updatedAt: '2026-08-25',
+    },
+    {
+      id: 'shared-3',
+      author: 'shanice' as const,
+      kind: 'insight' as const,
+      body: 'Revoked.',
+      sharedAt: '2026-08-25',
+      updatedAt: '2026-08-25',
+      revokedAt: '2026-08-25',
+    },
+  ];
+
+  it('shows only active items explicitly authored by the other role', () => {
+    const shanice = derive(joined({ sharedItems: shared }));
+    const darnell = derive({
+      ...joined({ sharedItems: shared }),
+      demo: { currentDay: 1, role: 'darnell' },
+    });
+
+    expect(shanice.sharedByMe).toEqual([shared[0]]);
+    expect(shanice.sharedWithMe).toEqual([shared[1]]);
+    expect(darnell.sharedWithMe).toEqual([shared[0]]);
+    expect(darnell.sharedByMe).toEqual([shared[1]]);
+  });
+});
+
+describe('phase one privacy boundary', () => {
+  it('keeps private cycle data out of all partner-facing derived values', () => {
+    const state = joined({
+      onboarding: {
+        answers: { cycleStart: '2026-08-01', cycleLength: '~28 days' },
+        skipped: [],
+        completed: true,
+      },
+      cycleLogs: [
+        {
+          id: 'cycle-1',
+          date: '2026-08-20',
+          period: 'start',
+          physicalSymptoms: ['Cramps'],
+          notes: 'Private note',
+        },
+      ],
+    });
+    const derived = derive({
+      ...state,
+      demo: { currentDay: 1, role: 'darnell' },
+    });
+
+    expect(JSON.stringify(derived.partnerFacing)).not.toMatch(
+      /cycle|period|symptom|notes/i,
+    );
+    expect(JSON.stringify(derived.partnerScore)).not.toMatch(
+      /cycle|period|symptom|notes/i,
+    );
+    expect(derived.sharedWithMe).toEqual([]);
+  });
 });
 
 describe('plan shortlist', () => {

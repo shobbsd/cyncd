@@ -77,6 +77,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function isIsoDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const date = new Date(value + 'T00:00:00.000Z');
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function isRole(value: unknown): value is 'shanice' | 'darnell' {
+  return value === 'shanice' || value === 'darnell';
+}
+
 /**
  * Dropping a malformed record is the right recovery, but doing it silently is
  * not: the demo would come back with saved plans or log entries simply missing
@@ -145,26 +157,43 @@ function isScoreActionCompletion(value: unknown): value is ScoreActionCompletion
 }
 
 function isCycleLogEntry(value: unknown): value is CycleLogEntry {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.date === 'string';
+  return isRecord(value) && typeof value.id === 'string' && isIsoDate(value.date);
 }
 
 function isSharedItem(value: unknown): value is SharedItem {
   return isRecord(value) && typeof value.id === 'string' &&
-    (value.author === 'shanice' || value.author === 'darnell') &&
-    (value.kind === 'note' || value.kind === 'insight') && typeof value.body === 'string' &&
-    typeof value.sharedAt === 'string' && typeof value.updatedAt === 'string';
+    isRole(value.author) &&
+    (value.kind === 'note' || value.kind === 'insight' || value.kind === 'need') &&
+    typeof value.body === 'string' &&
+    isIsoDate(value.sharedAt) && isIsoDate(value.updatedAt) &&
+    (value.revokedAt === undefined || isIsoDate(value.revokedAt));
 }
 
 function isCalendarEntry(value: unknown): value is CalendarEntry {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.date === 'string' &&
-    typeof value.title === 'string' && (value.author === 'shanice' || value.author === 'darnell') &&
+  return isRecord(value) && typeof value.id === 'string' && isIsoDate(value.date) &&
+    typeof value.title === 'string' && isRole(value.author) &&
     (value.kind === 'plan' || value.kind === 'date' || value.kind === 'note');
 }
 
 function isReflectionEntry(value: unknown): value is ReflectionEntry {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.date === 'string' &&
+  return isRecord(value) && typeof value.id === 'string' && isIsoDate(value.date) &&
     typeof value.text === 'string' && Array.isArray(value.signals) &&
-    (value.author === 'shanice' || value.author === 'darnell') && typeof value.createdAt === 'string';
+    value.signals.every(
+      (signal) =>
+        signal === 'connection' ||
+        signal === 'support' ||
+        signal === 'space' ||
+        signal === 'low-energy' ||
+        signal === 'friction',
+    ) &&
+    isRole(value.author) &&
+    typeof value.createdAt === 'string' &&
+    !Number.isNaN(Date.parse(value.createdAt)) &&
+    (value.scoreFeedback === undefined ||
+      (typeof value.scoreFeedback === 'number' &&
+        value.scoreFeedback >= 1 &&
+        value.scoreFeedback <= 5)) &&
+    (value.actionCompleted === undefined || typeof value.actionCompleted === 'boolean');
 }
 
 function isActiveNotification(value: unknown): value is ActiveNotification {
@@ -177,7 +206,7 @@ function isActiveNotification(value: unknown): value is ActiveNotification {
   );
 }
 
-const TAB_IDS: TabId[] = ['today', 'partner', 'plan', 'reflect'];
+const TAB_IDS: TabId[] = ['today', 'forecast', 'partner', 'plan', 'reflect'];
 
 /**
  * Reconciles a persisted blob against the current shape.

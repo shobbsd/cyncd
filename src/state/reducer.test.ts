@@ -303,6 +303,94 @@ describe('reflections', () => {
   });
 });
 
+describe('phase one local records', () => {
+  it('lets an author revise an active shared item', () => {
+    const created = reducer(run(...TO_APP), {
+      type: 'createSharedItem',
+      kind: 'note',
+      body: 'I would like a quiet evening.',
+      date: '2026-08-25',
+    });
+
+    const updated = reducer(created, {
+      type: 'updateSharedItem',
+      id: 'shared-1',
+      body: 'I would like a quiet evening at home.',
+      date: '2026-08-26',
+    } as never);
+
+    expect(updated.sharedItems).toEqual([
+      expect.objectContaining({
+        id: 'shared-1',
+        body: 'I would like a quiet evening at home.',
+        updatedAt: '2026-08-26',
+      }),
+    ]);
+  });
+
+  it('does not let the other role revise a shared item', () => {
+    const created = reducer(run(...TO_APP), {
+      type: 'createSharedItem',
+      kind: 'note',
+      body: 'I need some space tonight.',
+      date: '2026-08-25',
+    });
+    const asPartner = reducer(created, { type: 'setRole', role: 'darnell' });
+
+    const updated = reducer(asPartner, {
+      type: 'updateSharedItem',
+      id: 'shared-1',
+      body: 'Changed by someone else.',
+      date: '2026-08-26',
+    } as never);
+
+    expect(updated.sharedItems[0].body).toBe('I need some space tonight.');
+  });
+
+  it('upserts one authored calendar entry by id', () => {
+    const entry = {
+      id: 'calendar-date-night',
+      date: '2026-08-30',
+      title: 'Date night',
+      kind: 'date' as const,
+      author: 'shanice' as const,
+    };
+    const once = reducer(run(...TO_APP), {
+      type: 'upsertCalendarEntry',
+      entry,
+    } as never);
+    const twice = reducer(once, {
+      type: 'upsertCalendarEntry',
+      entry: { ...entry, title: 'Dinner date' },
+    } as never);
+
+    expect(twice.calendarEntries).toEqual([
+      { ...entry, title: 'Dinner date' },
+    ]);
+  });
+
+  it('stores a conversational reflection without invented score feedback', () => {
+    const state = reducer(run(...TO_APP), {
+      type: 'addReflectionEntry',
+      entry: {
+        date: '2026-08-25',
+        text: 'We went for dinner and felt connected.',
+        signals: ['connection'],
+      },
+    } as never);
+
+    expect(state.reflectionEntries).toEqual([
+      expect.objectContaining({
+        author: 'shanice',
+        date: '2026-08-25',
+        text: 'We went for dinner and felt connected.',
+        signals: ['connection'],
+      }),
+    ]);
+    expect(state.reflectionEntries[0]).not.toHaveProperty('scoreFeedback');
+  });
+});
+
 describe('reset', () => {
   it('returns to a clean splash', () => {
     const busy = [

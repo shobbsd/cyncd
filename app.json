@@ -33,7 +33,15 @@
           "imageWidth": 76
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sharing",
+      [
+        "expo-calendar",
+        {
+          "writeOnlyAccess": true,
+          "writeOnlyCalendarPermission": "Allow cyncd to add plans you choose to your calendar."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

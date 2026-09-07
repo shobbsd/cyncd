@@ -8,6 +8,10 @@ export * from './forecast';
 export * from './phaseGuidance';
 export * from './onboarding';
 export * from './score';
+export * from './track';
+export * from './reflection';
+export * from './calendar';
+export * from './planAssistant';
 export * from './tabs';
 
 /** Tab order for the bottom bar. Labels here, styling and icons in the UI. */

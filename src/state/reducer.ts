@@ -1,8 +1,10 @@
 import type {
+  CalendarEntry,
   ChipId,
   CycleLogEntry,
   LogEntry,
   OutputType,
+  ReflectionEntry,
   Role,
   CyncdState,
 } from '../content';
@@ -28,8 +30,20 @@ export type Action =
   | { type: 'sharePlan'; id: string }
   | { type: 'completeScoreAction'; date: string }
   | { type: 'upsertCycleLog'; entry: CycleLogEntry }
-  | { type: 'createSharedItem'; kind: 'note' | 'insight'; body: string; date: string }
+  | {
+      type: 'createSharedItem';
+      kind: 'note' | 'insight' | 'need';
+      body: string;
+      date: string;
+    }
+  | { type: 'updateSharedItem'; id: string; body: string; date: string }
   | { type: 'revokeSharedItem'; id: string; date: string }
+  | { type: 'upsertCalendarEntry'; entry: CalendarEntry }
+  | { type: 'removeCalendarEntry'; id: string }
+  | {
+      type: 'addReflectionEntry';
+      entry: Omit<ReflectionEntry, 'id' | 'author' | 'createdAt'>;
+    }
   | {
       type: 'addLog';
       chip: ChipId | null;
@@ -296,6 +310,18 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
       };
     }
 
+    case 'updateSharedItem':
+      return {
+        ...state,
+        sharedItems: state.sharedItems.map((item) =>
+          item.id === action.id &&
+          item.author === state.demo.role &&
+          item.revokedAt === undefined
+            ? { ...item, body: action.body, updatedAt: action.date }
+            : item,
+        ),
+      };
+
     case 'revokeSharedItem':
       return {
         ...state,
@@ -305,6 +331,47 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
             : item,
         ),
       };
+
+    case 'upsertCalendarEntry': {
+      if (action.entry.author !== state.demo.role) return state;
+      const existing = state.calendarEntries.find(
+        (entry) => entry.id === action.entry.id,
+      );
+      if (existing !== undefined && existing.author !== state.demo.role) {
+        return state;
+      }
+      return {
+        ...state,
+        calendarEntries: [
+          action.entry,
+          ...state.calendarEntries.filter(
+            (entry) => entry.id !== action.entry.id,
+          ),
+        ],
+      };
+    }
+
+    case 'removeCalendarEntry':
+      return {
+        ...state,
+        calendarEntries: state.calendarEntries.filter(
+          (entry) =>
+            entry.id !== action.id || entry.author !== state.demo.role,
+        ),
+      };
+
+    case 'addReflectionEntry': {
+      const entry: ReflectionEntry = {
+        id: nextId('reflection-entry', state.reflectionEntries),
+        author: state.demo.role,
+        ...action.entry,
+        createdAt: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        reflectionEntries: [entry, ...state.reflectionEntries],
+      };
+    }
 
     case 'addLog': {
       const day = getDay(state.demo.currentDay);

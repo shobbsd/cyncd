@@ -258,7 +258,7 @@ export interface ScoreActionCompletion {
 export interface SharedItem {
   id: string;
   author: Role;
-  kind: 'note' | 'insight';
+  kind: 'note' | 'insight' | 'need';
   body: string;
   sharedAt: string;
   updatedAt: string;
@@ -274,13 +274,21 @@ export interface CalendarEntry {
   icon?: string;
 }
 
+export type ReflectionSignal =
+  | 'connection'
+  | 'support'
+  | 'space'
+  | 'low-energy'
+  | 'friction';
+
 export interface ReflectionEntry {
   id: string;
   author: Role;
   date: string;
   text: string;
-  signals: string[];
+  signals: ReflectionSignal[];
   scoreFeedback?: number;
+  actionCompleted?: boolean;
   createdAt: string;
 }
 

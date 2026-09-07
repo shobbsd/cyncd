@@ -85,6 +85,18 @@ export function CyncdProvider({ children }: { children: ReactNode }) {
       sharePlan: (id) => dispatch({ type: 'sharePlan', id }),
       completeScoreAction: (date) =>
         dispatch({ type: 'completeScoreAction', date }),
+      upsertCycleLog: (entry) => dispatch({ type: 'upsertCycleLog', entry }),
+      createSharedItem: (input) =>
+        dispatch({ type: 'createSharedItem', ...input }),
+      updateSharedItem: (id, body, date) =>
+        dispatch({ type: 'updateSharedItem', id, body, date }),
+      revokeSharedItem: (id, date) =>
+        dispatch({ type: 'revokeSharedItem', id, date }),
+      upsertCalendarEntry: (entry) =>
+        dispatch({ type: 'upsertCalendarEntry', entry }),
+      removeCalendarEntry: (id) => dispatch({ type: 'removeCalendarEntry', id }),
+      addReflectionEntry: (entry) =>
+        dispatch({ type: 'addReflectionEntry', entry }),
       addReflection: (accuracy, mood) =>
         dispatch({ type: 'addReflection', accuracy, mood }),
       dismissNotification: () => dispatch({ type: 'dismissNotification' }),

@@ -1,12 +1,15 @@
 import type {
   DayContent,
   DayType,
+  CyclePrediction,
+  ForecastView,
   LogEntry,
   PhaseGuidance,
   PlanSuggestion,
   SavedPlan,
   ScoreHistoryEntry,
   ScoreResult,
+  SharedItem,
   SupportApproach,
   CyncdState,
 } from '../content';
@@ -15,6 +18,7 @@ import {
   WEEK_STRIP,
   bestEveningSentence,
   calculateScore,
+  forecastFor,
   getDay,
   guidanceFor,
   predictCycle,
@@ -56,6 +60,14 @@ export interface Derived {
   timeline: LogEntry[];
   simulatedDate: string;
   guidance: PhaseGuidance;
+  /** Private to Shanice; the Partner tab only receives non-cycle guidance. */
+  forecast: ForecastView;
+  /** Never pass this to a shared or partner-facing view. */
+  privateCycle: CyclePrediction;
+  /** Active items deliberately shared by the current role. */
+  sharedByMe: SharedItem[];
+  /** Active items deliberately shared by the other role. */
+  sharedWithMe: SharedItem[];
   score: ScoreResult;
   partnerScore: Pick<
     ScoreResult,
@@ -76,6 +88,19 @@ function cycleLengthFromAnswer(answer: string | undefined): number | undefined {
   return 28;
 }
 
+/**
+ * Score input is intentionally numbers-only. Reflection text and signals stay
+ * in the private reflection view and never cross into the calculation.
+ */
+function recentFeedback(state: CyncdState): number {
+  const values = state.reflectionEntries
+    .filter((entry) => entry.scoreFeedback !== undefined)
+    .slice(0, 8)
+    .map((entry) => (entry.scoreFeedback! - 1) * 25);
+  if (values.length === 0) return 50;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
 function scoreForDate(state: CyncdState, date: string): ScoreResult {
   const cycle = predictCycle(
     {
@@ -83,6 +108,7 @@ function scoreForDate(state: CyncdState, date: string): ScoreResult {
       cycleLength: cycleLengthFromAnswer(state.onboarding.answers.cycleLength),
     },
     date,
+    state.cycleLogs,
   );
   return calculateScore({
     primaryAnswers: state.onboarding.answers,
@@ -91,6 +117,7 @@ function scoreForDate(state: CyncdState, date: string): ScoreResult {
     completedAction: state.scoreActionCompletions.some(
       (completion) => completion.date === date,
     ),
+    accuracyFeedback: recentFeedback(state),
   });
 }
 
@@ -104,8 +131,21 @@ export function derive(state: CyncdState): Derived {
       cycleLength: cycleLengthFromAnswer(state.onboarding.answers.cycleLength),
     },
     simulatedDate,
+    state.cycleLogs,
   );
-  const score = scoreForDate(state, simulatedDate);
+  const rawScore = scoreForDate(state, simulatedDate);
+  const feedbackByRole = state.reflectionEntries.filter(
+    (entry) => entry.scoreFeedback !== undefined,
+  );
+  const hasPersonalisedScore = (['shanice', 'darnell'] as const).every(
+    (role) => feedbackByRole.filter((entry) => entry.author === role).length >= 4,
+  );
+  const score: ScoreResult = {
+    ...rawScore,
+    confidence: hasPersonalisedScore
+      ? 'Your personalised cyncd Score.'
+      : 'Today’s predicted cyncd Score.',
+  };
   const { components: _components, ...partnerScore } = score;
   const scoreHistory = Array.from({ length: 7 }, (_, index) => {
     const date = addDays(simulatedDate, index - 6);
@@ -116,6 +156,9 @@ export function derive(state: CyncdState): Derived {
       label: historicalScore.label,
     };
   });
+  const activeSharedItems = state.sharedItems.filter(
+    (item) => item.revokedAt === undefined,
+  );
 
   return {
     today,
@@ -139,6 +182,14 @@ export function derive(state: CyncdState): Derived {
     timeline: state.logs,
     simulatedDate,
     guidance: guidanceFor(cycle),
+    forecast: forecastFor(cycle),
+    privateCycle: cycle,
+    sharedByMe: activeSharedItems.filter(
+      (item) => item.author === state.demo.role,
+    ),
+    sharedWithMe: activeSharedItems.filter(
+      (item) => item.author !== state.demo.role,
+    ),
     score,
     partnerScore,
     scoreHistory,

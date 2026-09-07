@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { CalendarGrid } from '../components/CalendarGrid';
 import { DayPill } from '../components/DayPill';
+import { PlanAssistant } from '../components/PlanAssistant';
 import {
   Btn,
   Card,
@@ -12,6 +14,8 @@ import {
   ScreenTitle,
 } from '../components/ui';
 import { useCyncd } from '../state';
+import { toIcsEvent } from '../services/calendarExport';
+import { addToDeviceCalendar } from '../services/deviceCalendar';
 import { color, font, radius, space, tap } from '../theme/tokens';
 
 /**
@@ -27,6 +31,20 @@ export function Plan() {
   const { state, actions, derived } = useCyncd();
   const { today, planSuggestions, bestEvening, sharedPlans } = derived;
   const [justDid, setJustDid] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(derived.simulatedDate);
+  const [note, setNote] = useState('');
+  const month = selectedDate.slice(0, 7);
+  const assistantContext = useMemo(
+    () => ({
+      publicScoreOutlook: derived.scoreHistory.map(({ date, label }) => ({
+        date,
+        label,
+      })),
+      calendarEntries: state.calendarEntries,
+      activeSharedItems: [...derived.sharedByMe, ...derived.sharedWithMe],
+    }),
+    [derived.scoreHistory, derived.sharedByMe, derived.sharedWithMe, state.calendarEntries],
+  );
 
   const flash = (id: string) => {
     setJustDid(id);
@@ -79,6 +97,20 @@ export function Plan() {
                   flash(suggestion.id);
                 }}
               />
+              <Btn
+                label="Add to calendar"
+                variant="secondary"
+                onPress={() => {
+                  actions.upsertCalendarEntry({
+                    id: `plan-${selectedDate}-${suggestion.id}`,
+                    date: selectedDate,
+                    title: suggestion.title,
+                    kind: 'plan',
+                    author: state.demo.role,
+                  });
+                  flash(suggestion.id);
+                }}
+              />
             </View>
           )}
         </Card>
@@ -120,6 +152,71 @@ export function Plan() {
           </View>
         )}
       </View>
+
+      <View style={styles.section}>
+        <Eyebrow>Shared calendar</Eyebrow>
+        <CalendarGrid
+          month={month}
+          entries={state.calendarEntries}
+          selectedDate={selectedDate}
+          onSelect={setSelectedDate}
+        />
+        <Card variant="flat">
+          <Eyebrow>{selectedDate}</Eyebrow>
+          {state.calendarEntries.filter((entry) => entry.date === selectedDate).map((entry) => (
+            <View key={entry.id} style={styles.calendarEntry}>
+              <Text style={styles.savedText}>{entry.title}</Text>
+              <Faint>Added by {entry.author}</Faint>
+              {entry.author === state.demo.role ? (
+                <View style={styles.calendarActions}>
+                  <Btn label="Remove" variant="ghost" onPress={() => actions.removeCalendarEntry(entry.id)} />
+                  <Btn
+                    label="Add to device calendar"
+                    variant="ghost"
+                    onPress={async () => {
+                      const added = await addToDeviceCalendar(entry);
+                      if (!added) {
+                        await Share.share({ message: toIcsEvent(entry) });
+                      }
+                    }}
+                  />
+                </View>
+              ) : null}
+            </View>
+          ))}
+          <TextInput
+            accessibilityLabel="Calendar note"
+            placeholder="Add a note or activity"
+            placeholderTextColor={color.inkFaint}
+            value={note}
+            onChangeText={setNote}
+            style={styles.calendarInput}
+          />
+          <Btn
+            label="Add to calendar"
+            variant="secondary"
+            block
+            disabled={!note.trim()}
+            onPress={() => {
+              const trimmed = note.trim();
+              if (!trimmed) return;
+              actions.upsertCalendarEntry({
+                id: `note-${selectedDate}-${state.demo.role}-${trimmed.toLowerCase().replaceAll(' ', '-')}`,
+                date: selectedDate,
+                title: trimmed,
+                kind: 'note',
+                author: state.demo.role,
+              });
+              setNote('');
+            }}
+          />
+        </Card>
+      </View>
+
+      <Card>
+        <Eyebrow>Plan assistant</Eyebrow>
+        <PlanAssistant context={assistantContext} />
+      </Card>
     </View>
   );
 }
@@ -144,6 +241,7 @@ const styles = StyleSheet.create({
   },
   planActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: space.sm,
   },
   saved: {
@@ -195,4 +293,7 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.6,
   },
+  calendarEntry: { gap: space.xs, paddingVertical: space.sm },
+  calendarActions: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
+  calendarInput: { minHeight: 48, paddingHorizontal: space.md, borderWidth: 1, borderColor: color.lineStrong, borderRadius: radius.soft, color: color.ink, fontSize: font.size.body },
 });

@@ -1,6 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { DayPill } from '../components/DayPill';
 import { ScoreCard } from '../components/ScoreCard';
+import { SharedItemCard } from '../components/SharedItemCard';
+import { SharedItemComposer } from '../components/SharedItemComposer';
+import { ShareScoreCard } from '../components/ShareScoreCard';
 import {
   Btn,
   Card,
@@ -13,6 +16,7 @@ import {
 } from '../components/ui';
 import { PRIVACY_NOTE, ROLE_NAMES } from '../content';
 import { useCyncd } from '../state';
+import { toShareCardInput } from '../services/scoreShare';
 import { color, font, radius, space, tap } from '../theme/tokens';
 
 const APPROACH_LABEL = {
@@ -41,6 +45,8 @@ export function Partner() {
     sharingPausedNotice,
     score,
     scoreHistory,
+    sharedByMe,
+    sharedWithMe,
     simulatedDate,
   } = derived;
   const viewingAsPartner = state.demo.role === 'darnell';
@@ -55,6 +61,14 @@ export function Partner() {
         history={scoreHistory}
         actionCompleted={actionCompleted}
         onComplete={() => actions.completeScoreAction(simulatedDate)}
+      />
+      <ShareScoreCard
+        input={toShareCardInput({
+          percentage: score.percentage,
+          label: score.label,
+          line: score.line,
+          action: score.action,
+        })}
       />
 
       {partnerTabState === 'invite' ? (
@@ -156,6 +170,49 @@ export function Partner() {
               </Faint>
             ) : null}
           </View>
+
+          <Card>
+            <Eyebrow>Shared with me</Eyebrow>
+            {sharedWithMe.length === 0 ? (
+              <Faint>No intentional notes yet.</Faint>
+            ) : (
+              <View style={styles.sharedItems}>
+                {sharedWithMe.map((item) => (
+                  <SharedItemCard key={item.id} item={item} />
+                ))}
+              </View>
+            )}
+          </Card>
+
+          <Card>
+            <SharedItemComposer
+              onShare={({ kind, body }) =>
+                actions.createSharedItem({
+                  kind,
+                  body,
+                  date: simulatedDate,
+                })
+              }
+            />
+            <Eyebrow>Shared by me</Eyebrow>
+            {sharedByMe.length === 0 ? (
+              <Faint>Nothing shared by you yet.</Faint>
+            ) : (
+              <View style={styles.sharedItems}>
+                {sharedByMe.map((item) => (
+                  <SharedItemCard
+                    key={item.id}
+                    item={item}
+                    editable
+                    onUpdate={(body) =>
+                      actions.updateSharedItem(item.id, body, simulatedDate)
+                    }
+                    onRevoke={() => actions.revokeSharedItem(item.id, simulatedDate)}
+                  />
+                ))}
+              </View>
+            )}
+          </Card>
         </>
       )}
     </View>
@@ -182,6 +239,7 @@ const styles = StyleSheet.create({
   actions: {
     gap: space.md,
   },
+  sharedItems: { gap: space.sm },
   action: {
     flexDirection: 'row',
     gap: space.md,

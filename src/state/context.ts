@@ -1,8 +1,11 @@
 import { createContext, useContext } from 'react';
 import type {
   ChipId,
+  CalendarEntry,
   CoachChip,
   CoachNode,
+  CycleLogEntry,
+  ReflectionSignal,
   CyncdState,
   Role,
   TabId,
@@ -29,6 +32,22 @@ export interface Actions {
   savePlan(input: { day: number; text: string; share?: boolean }): void;
   sharePlan(id: string): void;
   completeScoreAction(date: string): void;
+  upsertCycleLog(entry: CycleLogEntry): void;
+  createSharedItem(input: {
+    kind: 'note' | 'insight' | 'need';
+    body: string;
+    date: string;
+  }): void;
+  updateSharedItem(id: string, body: string, date: string): void;
+  revokeSharedItem(id: string, date: string): void;
+  upsertCalendarEntry(entry: CalendarEntry): void;
+  removeCalendarEntry(id: string): void;
+  addReflectionEntry(input: {
+    date: string;
+    text: string;
+    signals: ReflectionSignal[];
+    scoreFeedback?: number;
+  }): void;
   addReflection(accuracy: number, mood?: string): void;
   dismissNotification(): void;
   /** Clears the banner and returns where to navigate. */
