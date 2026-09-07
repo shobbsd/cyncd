@@ -104,8 +104,10 @@ const styles = StyleSheet.create({
     gap: space.sm,
   },
   toggle: {
+    minHeight: tap,
     paddingHorizontal: space.md,
-    paddingVertical: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: color.lineStrong,
