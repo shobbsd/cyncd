@@ -30,7 +30,7 @@ export function DemoBar({
   const [open, setOpen] = useState(false)
 
   return (
-    <View style={styles.demobar} pointerEvents="box-none">
+    <View style={styles.demobar}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
@@ -95,13 +95,9 @@ export function DemoBar({
 
 const styles = StyleSheet.create({
   demobar: {
-    position: 'absolute',
-    top: 0,
-    right: space.md,
-    // Above the app bar and every screen, but below the coach sheet's scrim.
+    position: 'relative',
     zIndex: 20,
     alignItems: 'flex-end',
-    gap: space.sm,
   },
   toggle: {
     minHeight: tap,
@@ -120,6 +116,10 @@ const styles = StyleSheet.create({
     color: color.inkSoft,
   },
   panel: {
+    position: 'absolute',
+    top: tap + space.sm,
+    right: 0,
+    zIndex: 30,
     width: 220,
     gap: space.lg,
     padding: space.lg,

@@ -72,23 +72,24 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.frame} edges={['top']}>
-      <DemoBar
-        role={state.demo.role}
-        date={state.demo.simulatedDate ?? '2026-08-25'}
-        onRole={actions.setRole}
-        onStep={actions.stepDay}
-        onReset={actions.resetDemo}
-      />
-
       {state.flow === 'app' && !welcomed ? (
         <Welcome onContinue={() => setWelcomed(true)} />
       ) : state.flow === 'app' ? (
         <>
           <View style={styles.appbar}>
             <BrandLockup />
-            <Text style={styles.who}>
-              Viewing as {ROLE_NAMES[state.demo.role]}
-            </Text>
+            <View style={styles.appbarControls}>
+              <Text style={styles.who}>
+                Viewing as {ROLE_NAMES[state.demo.role]}
+              </Text>
+              <DemoBar
+                role={state.demo.role}
+                date={state.demo.simulatedDate ?? '2026-08-25'}
+                onRole={actions.setRole}
+                onStep={actions.stepDay}
+                onReset={actions.resetDemo}
+              />
+            </View>
           </View>
 
           <ScrollView contentContainerStyle={styles.scroll}>
@@ -168,6 +169,12 @@ const styles = StyleSheet.create({
     paddingVertical: space.md,
     borderBottomWidth: 1,
     borderBottomColor: color.line,
+    zIndex: 20,
+  },
+  appbarControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
   },
   who: {
     fontSize: font.size.caption,

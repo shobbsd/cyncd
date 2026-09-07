@@ -15,4 +15,16 @@ describe('Demo control touch target', () => {
 
     expect(toggleBlock).toMatch(/minHeight:\s*tap/);
   });
+
+  it('does not place the switch in the operating system status-bar area', () => {
+    const source = readFileSync(
+      new URL('../components/DemoBar.tsx', import.meta.url),
+      'utf8',
+    );
+    const barBlock = source.match(
+      /demobar:\s*{([\s\S]*?)\n  },\n  toggle:/,
+    )?.[1];
+
+    expect(barBlock).not.toMatch(/position:\s*'absolute'/);
+  });
 });
