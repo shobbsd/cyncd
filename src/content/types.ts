@@ -212,13 +212,96 @@ export type CoachNode =
 
 // --- Onboarding -----------------------------------------------------------
 
-export interface OnboardingQuestion {
+/**
+ * An onboarding answer. Most questions are one tap; the multi-select cards
+ * ("Choose as many as feel right") and the signals Cyncd pulls out of a spoken
+ * or typed answer are lists.
+ */
+export type OnboardingAnswer = string | string[];
+
+/** Show a step only once an earlier answer is this value. */
+export interface StepCondition {
   id: string;
-  prompt: string;
-  options: string[];
-  /** The optional cycle-start question renders a date picker, not chips. */
-  kind?: 'chips' | 'date';
+  equals: string;
 }
+
+/**
+ * The optional "Want to tell Cyncd more?" row under a question.
+ *
+ * `sample` is what the Speak button plays back. There is no speech recogniser
+ * in the demo, so Speak performs a scripted answer rather than pretending to
+ * hear one; the extraction and confirmation that follow are real.
+ */
+export interface TellMore {
+  prompt?: string;
+  speakLabel?: string;
+  sample: string;
+}
+
+interface StepBase {
+  id: string;
+  when?: StepCondition;
+}
+
+/**
+ * One screen of onboarding. The kind is the input method — the notes' rule is
+ * "don't make them type if they can tap, don't make them tap ten things if they
+ * can say one sentence" — so each question declares the cheapest input that
+ * can answer it rather than every screen being the same chip list.
+ */
+export type OnboardingStep =
+  | (StepBase & {
+      kind: 'single';
+      prompt: string;
+      hint?: string;
+      options: string[];
+      tellMore?: TellMore;
+    })
+  | (StepBase & {
+      kind: 'multi';
+      prompt: string;
+      hint?: string;
+      options: string[];
+      /** Options that stand alone, e.g. "Nothing I've noticed". */
+      exclusive?: string[];
+      tellMore?: TellMore;
+    })
+  | (StepBase & { kind: 'date'; prompt: string; hint?: string })
+  /** An open question answered by Speak / Type, or skipped. */
+  | (StepBase & {
+      kind: 'tell';
+      prompt: string;
+      hint?: string;
+      speakLabel: string;
+      skipLabel: string;
+      sample: string;
+    })
+  /** A breather between sections. Nothing to answer. */
+  | (StepBase & { kind: 'pause'; title: string; lines: string[] })
+  /** "Give them something back" — a summary built from their answers. */
+  | (StepBase & { kind: 'reflect'; title: string; closing: string })
+  | (StepBase & {
+      kind: 'health';
+      prompt: string;
+      explainer: string;
+      connectLabel: string;
+      declineLabel: string;
+    })
+  | (StepBase & {
+      kind: 'privacy';
+      title: string;
+      lines: string[];
+      options: string[];
+      defaultOption: string;
+    })
+  | (StepBase & {
+      kind: 'commitment';
+      title: string;
+      lines: string[];
+      pledge: string;
+      holdLabel: string;
+      doneLabel: string;
+    });
 
 // --- Persisted state ------------------------------------------------------
 
@@ -228,14 +311,16 @@ export interface OnboardingQuestion {
  *
  * `learning` and `paired` are transient screens (a timed animation and the
  * "You're synced" confirmation shown once the partner joins). On rehydrate they
- * resolve forward — `learning` -> `invite`, `paired` -> `app` — so a relaunch
+ * resolve forward — `learning` -> `trial`, `paired` -> `app` — so a relaunch
  * during the animation can never strand someone on a screen with no way out.
  */
 export type Flow =
   | 'splash'
   | 'signup'
+  | 'name'
   | 'onboarding'
   | 'learning'
+  | 'trial'
   | 'invite'
   | 'partnerOnboarding'
   | 'paired'
@@ -324,15 +409,15 @@ export interface CyncdState {
   /** Bumped when a shape change would break a persisted blob. */
   version: number;
   flow: Flow;
-  account: { email: string | null };
+  account: { email: string | null; name: string | null };
   onboarding: {
-    answers: Record<string, string>;
+    answers: Record<string, OnboardingAnswer>;
     skipped: string[];
     completed: boolean;
   };
   partner: {
     joined: boolean;
-    answers: Record<string, string>;
+    answers: Record<string, OnboardingAnswer>;
     inviteCode: string | null;
   };
   demo: { currentDay: number; simulatedDate?: string; role: Role };

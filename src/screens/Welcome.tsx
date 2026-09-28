@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BrandLockup } from '../components/BrandMark';
 import { Btn, Card, Faint, Guidance } from '../components/ui';
+import { SLOGAN } from '../content';
 import { space } from '../theme/tokens';
 
 export const welcomeDelayMs = 2000;
@@ -17,7 +18,7 @@ export function Welcome({ onContinue }: { onContinue: () => void }) {
     <View style={styles.screen}>
       <BrandLockup />
       <Card variant="warm">
-        <Guidance>Stay in cyncd. Know the day together.</Guidance>
+        <Guidance>{SLOGAN}</Guidance>
         <Faint>Today’s guidance is ready.</Faint>
         <Btn label="Continue" block onPress={onContinue} />
       </Card>

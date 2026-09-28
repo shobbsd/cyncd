@@ -7,6 +7,7 @@ export * from './cycle';
 export * from './forecast';
 export * from './phaseGuidance';
 export * from './onboarding';
+export * from './understand';
 export * from './score';
 export * from './track';
 export * from './reflection';
@@ -38,10 +39,21 @@ export const DAY_TYPE_LABELS: Record<DayType, string> = {
  * both sides agree on the hook; the values are the UI's to set — sage, warm
  * gold/sand, muted lavender and deeper sage respectively.
  */
-export const SLOGAN = 'Stay in sync. Know the day. Together.';
+export const SLOGAN = 'Stay in Cyncd. Know the day together.';
 
-export const SPLASH_LINE =
-  'cyncd helps couples understand daily mood, energy and communication timing.';
+/** The first screen after "Create account" — why Cyncd exists, then one ask. */
+export const INTRO = {
+  title: 'Built for two. Personal to you.',
+  body: 'Cyncd turns cycle patterns and daily changes into personalised guidance — helping you understand each other, communicate better, plan ahead and offer the right support at the right time.',
+} as const;
+
+/** The free-access screen, shown before anything that looks like a paywall. */
+export const TRIAL = {
+  title: 'Your first 30 days are on us.',
+  lines: ['Learn your rhythm.', 'Cync with your partner.', 'See what changes.'],
+  note: 'No card required.',
+  cta: 'Start my 30 days',
+} as const;
 
 /**
  * The demo couple. Shanice is the primary user, Darnell the partner — one

@@ -12,8 +12,10 @@ function run(...actions: Action[]) {
 const TO_APP: Action[] = [
   { type: 'startSignup' },
   { type: 'submitSignup', email: 'shanice@example.com' },
+  { type: 'submitName', name: 'Shanice' },
   { type: 'answerOnboarding', id: 'sleep', value: 'Late' },
   { type: 'finishOnboarding' },
+  { type: 'advanceFlow' },
   { type: 'advanceFlow' },
   { type: 'simulatePartnerJoin' },
   { type: 'answerPartnerOnboarding', id: 'support', value: 'Space' },
@@ -29,9 +31,11 @@ describe('flow', () => {
     );
     expect(flows).toEqual([
       'signup',
+      'name',
       'onboarding',
       'onboarding',
       'learning',
+      'trial',
       'invite',
       'partnerOnboarding',
       'partnerOnboarding',
@@ -41,7 +45,7 @@ describe('flow', () => {
   });
 
   it('generates an invite code once and keeps it stable', () => {
-    const invite = run(...TO_APP.slice(0, 5));
+    const invite = run(...TO_APP.slice(0, 7));
     expect(invite.partner.inviteCode).toMatch(/^cyncd-[A-Z2-9]{6}$/);
     const again = reducer(reducer(invite, { type: 'simulatePartnerJoin' }), {
       type: 'advanceFlow',
@@ -50,7 +54,7 @@ describe('flow', () => {
   });
 
   it('reaches the app without a partner, since the invite screen has no other exit', () => {
-    const state = run(...TO_APP.slice(0, 5), {
+    const state = run(...TO_APP.slice(0, 7), {
       type: 'continueWithoutPartner',
     });
     expect(state.flow).toBe('app');
@@ -58,10 +62,27 @@ describe('flow', () => {
     expect(derive(state).partnerTabState).toBe('invite');
   });
 
+  it('keeps the email when the name is added', () => {
+    const named = run(...TO_APP.slice(0, 3));
+    expect(named.account).toEqual({ email: 'shanice@example.com', name: 'Shanice' });
+  });
+
+  it('treats "Private to me" as pausing sharing, and the shared option as not', () => {
+    const privately = run({ type: 'answerOnboarding', id: 'privacy', value: 'Private to me' });
+    expect(privately.sharing.paused).toBe(true);
+    const shared = reducer(privately, {
+      type: 'answerOnboarding',
+      id: 'privacy',
+      value: 'Okay for Cyncd to use for shared guidance',
+    });
+    expect(shared.sharing.paused).toBe(false);
+  });
+
   it('ignores advanceFlow outside a transient screen', () => {
     const onboarding = run(
       { type: 'startSignup' },
       { type: 'submitSignup', email: 'a@b.c' },
+      { type: 'submitName', name: 'A' },
     );
     expect(reducer(onboarding, { type: 'advanceFlow' })).toBe(onboarding);
   });
@@ -186,7 +207,7 @@ describe('day stepper', () => {
   });
 
   it('does not seed a banner before the app is reached', () => {
-    const invite = run(...TO_APP.slice(0, 5));
+    const invite = run(...TO_APP.slice(0, 7));
     expect(reducer(invite, { type: 'setDay', day: 3 }).notification).toBeNull();
   });
 

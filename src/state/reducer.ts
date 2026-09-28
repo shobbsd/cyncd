@@ -1,4 +1,5 @@
 import type {
+  OnboardingAnswer,
   CalendarEntry,
   ChipId,
   CycleLogEntry,
@@ -8,18 +9,19 @@ import type {
   Role,
   CyncdState,
 } from '../content';
-import { clampDay, getDay } from '../content';
+import { PRIVACY_OPTIONS, clampDay, getDay } from '../content';
 import { initialState, resolveTransientFlow } from './persistence';
 
 export type Action =
   | { type: 'startSignup' }
   | { type: 'submitSignup'; email: string }
-  | { type: 'answerOnboarding'; id: string; value: string }
+  | { type: 'submitName'; name: string }
+  | { type: 'answerOnboarding'; id: string; value: OnboardingAnswer }
   | { type: 'skipOnboarding'; id: string }
   | { type: 'finishOnboarding' }
   | { type: 'advanceFlow' }
   | { type: 'simulatePartnerJoin' }
-  | { type: 'answerPartnerOnboarding'; id: string; value: string }
+  | { type: 'answerPartnerOnboarding'; id: string; value: OnboardingAnswer }
   | { type: 'completePartnerOnboarding' }
   | { type: 'continueWithoutPartner' }
   | { type: 'setRole'; role: Role }
@@ -137,13 +139,26 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
       // No validation by design — the field is a prop in the demo.
       return {
         ...state,
-        account: { email: action.email.trim() || null },
+        account: { ...state.account, email: action.email.trim() || null },
+        flow: 'name',
+      };
+
+    case 'submitName':
+      return {
+        ...state,
+        account: { ...state.account, name: action.name.trim() || null },
         flow: 'onboarding',
       };
 
     case 'answerOnboarding':
       return {
         ...state,
+        // The privacy choice is a real control, not a survey answer: "Private
+        // to me" is the same switch as pausing sharing from the Partner tab,
+        // so it can be undone there.
+        ...(action.id === 'privacy'
+          ? { sharing: { paused: action.value === PRIVACY_OPTIONS.private } }
+          : {}),
         onboarding: {
           ...state.onboarding,
           answers: { ...state.onboarding.answers, [action.id]: action.value },
@@ -173,7 +188,8 @@ export function reducer(state: CyncdState, action: Action): CyncdState {
       };
 
     case 'advanceFlow': {
-      if (state.flow === 'learning') {
+      if (state.flow === 'learning') return { ...state, flow: 'trial' };
+      if (state.flow === 'trial') {
         return {
           ...state,
           flow: 'invite',

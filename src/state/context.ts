@@ -7,6 +7,7 @@ import type {
   CycleLogEntry,
   ReflectionSignal,
   CyncdState,
+  OnboardingAnswer,
   Role,
   TabId,
 } from '../content';
@@ -15,14 +16,15 @@ import type { Derived } from './derived';
 export interface Actions {
   startSignup(): void;
   submitSignup(email: string): void;
-  answerOnboarding(id: string, value: string): void;
+  submitName(name: string): void;
+  answerOnboarding(id: string, value: OnboardingAnswer): void;
   skipOnboarding(id: string): void;
   /** Last onboarding screen -> the "Learning your patterns" animation. */
   finishOnboarding(): void;
-  /** Moves a transient screen forward: learning -> invite, paired -> app. */
+  /** Moves a transient screen forward: learning -> trial -> invite, paired -> app. */
   advanceFlow(): void;
   simulatePartnerJoin(): void;
-  answerPartnerOnboarding(id: string, value: string): void;
+  answerPartnerOnboarding(id: string, value: OnboardingAnswer): void;
   completePartnerOnboarding(): void;
   continueWithoutPartner(): void;
   setRole(role: Role): void;

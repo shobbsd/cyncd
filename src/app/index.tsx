@@ -8,8 +8,8 @@ import { NotificationBanner } from '../components/NotificationBanner';
 import { TabBar } from '../components/TabBar';
 import {
   COACH_CHIPS,
-  ONBOARDING_QUESTIONS,
-  PARTNER_QUESTIONS,
+  ONBOARDING_STEPS,
+  PARTNER_STEPS,
   ROLE_NAMES,
   type TabId,
   tabForRole,
@@ -20,10 +20,11 @@ import { Partner } from '../screens/Partner';
 import { Plan } from '../screens/Plan';
 import { QuestionFlow } from '../screens/QuestionFlow';
 import { Reflect } from '../screens/Reflect';
-import { Signup, Splash } from '../screens/Splash';
+import { NameStep, Signup, Splash } from '../screens/Splash';
 import { Today } from '../screens/Today';
 import { Welcome } from '../screens/Welcome';
-import { CyncdConfirm, Learning } from '../screens/Transitions';
+import { CyncdConfirm, Learning, Trial } from '../screens/Transitions';
+import { FadeIn } from '../components/FadeIn';
 import { useCyncd } from '../state';
 import { color, font, space } from '../theme/tokens';
 
@@ -116,28 +117,43 @@ export default function App() {
           <TabBar active={tab} role={state.demo.role} onValueChange={setTab} />
         </>
       ) : (
-        <ScrollView contentContainerStyle={styles.flowScroll}>
-          {state.flow === 'splash' ? <Splash /> : null}
-          {state.flow === 'signup' ? <Signup /> : null}
-          {state.flow === 'onboarding' ? (
-            <QuestionFlow
-              questions={ONBOARDING_QUESTIONS}
-              onAnswer={actions.answerOnboarding}
-              onSkip={actions.skipOnboarding}
-              onFinish={actions.finishOnboarding}
-            />
-          ) : null}
-          {state.flow === 'learning' ? <Learning /> : null}
-          {state.flow === 'invite' ? <Invite /> : null}
-          {state.flow === 'partnerOnboarding' ? (
-            <QuestionFlow
-              questions={PARTNER_QUESTIONS}
-              onAnswer={actions.answerPartnerOnboarding}
-              onSkip={() => {}}
-              onFinish={actions.completePartnerOnboarding}
-            />
-          ) : null}
-          {state.flow === 'paired' ? <CyncdConfirm /> : null}
+        <ScrollView
+          contentContainerStyle={styles.flowScroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Keyed by flow so each screen eases in from the last one. */}
+          <FadeIn key={state.flow} style={styles.flowScreen} rise={0} duration={450}>
+            {state.flow === 'splash' ? <Splash /> : null}
+            {state.flow === 'signup' ? <Signup /> : null}
+            {state.flow === 'name' ? <NameStep /> : null}
+            {state.flow === 'onboarding' ? (
+              <QuestionFlow
+                steps={ONBOARDING_STEPS}
+                answers={state.onboarding.answers}
+                greeting={
+                  state.account.name === null
+                    ? undefined
+                    : `Nice to meet you, ${state.account.name}.`
+                }
+                onAnswer={actions.answerOnboarding}
+                onSkip={actions.skipOnboarding}
+                onFinish={actions.finishOnboarding}
+              />
+            ) : null}
+            {state.flow === 'learning' ? <Learning /> : null}
+            {state.flow === 'trial' ? <Trial /> : null}
+            {state.flow === 'invite' ? <Invite /> : null}
+            {state.flow === 'partnerOnboarding' ? (
+              <QuestionFlow
+                steps={PARTNER_STEPS}
+                answers={state.partner.answers}
+                onAnswer={actions.answerPartnerOnboarding}
+                onSkip={() => {}}
+                onFinish={actions.completePartnerOnboarding}
+              />
+            ) : null}
+            {state.flow === 'paired' ? <CyncdConfirm /> : null}
+          </FadeIn>
         </ScrollView>
       )}
 
@@ -187,5 +203,8 @@ const styles = StyleSheet.create({
   },
   flowScroll: {
     flexGrow: 1,
+  },
+  flowScreen: {
+    flex: 1,
   },
 });

@@ -14,6 +14,7 @@ import type {
   CyncdState,
 } from '../content';
 import {
+  answerText,
   STARTER_NOTE,
   WEEK_STRIP,
   bestEveningSentence,
@@ -104,8 +105,8 @@ function recentFeedback(state: CyncdState): number {
 function scoreForDate(state: CyncdState, date: string): ScoreResult {
   const cycle = predictCycle(
     {
-      lastPeriodStart: state.onboarding.answers.cycleStart,
-      cycleLength: cycleLengthFromAnswer(state.onboarding.answers.cycleLength),
+      lastPeriodStart: answerText(state.onboarding.answers.cycleStart),
+      cycleLength: cycleLengthFromAnswer(answerText(state.onboarding.answers.cycleLength)),
     },
     date,
     state.cycleLogs,
@@ -127,8 +128,8 @@ export function derive(state: CyncdState): Derived {
   const simulatedDate = state.demo.simulatedDate ?? '2026-08-25';
   const cycle = predictCycle(
     {
-      lastPeriodStart: state.onboarding.answers.cycleStart,
-      cycleLength: cycleLengthFromAnswer(state.onboarding.answers.cycleLength),
+      lastPeriodStart: answerText(state.onboarding.answers.cycleStart),
+      cycleLength: cycleLengthFromAnswer(answerText(state.onboarding.answers.cycleLength)),
     },
     simulatedDate,
     state.cycleLogs,

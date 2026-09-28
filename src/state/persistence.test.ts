@@ -128,10 +128,10 @@ describe('the role rename', () => {
 describe('transient flow states', () => {
   // A refresh during a timed screen would otherwise land on a screen with
   // nothing to advance it.
-  it('resolves learning forward to invite', () => {
+  it('resolves learning forward to the trial screen', () => {
     expect(
       resolveTransientFlow({ ...initialState(), flow: 'learning' }).flow,
-    ).toBe('invite');
+    ).toBe('trial');
   });
 
   it('resolves paired forward to app', () => {
@@ -144,7 +144,9 @@ describe('transient flow states', () => {
     for (const flow of [
       'splash',
       'signup',
+      'name',
       'onboarding',
+      'trial',
       'invite',
       'partnerOnboarding',
       'app',
@@ -156,7 +158,7 @@ describe('transient flow states', () => {
   it('applies on load, not only in memory', async () => {
     const store = memoryStore();
     await save({ ...initialState(), flow: 'learning' }, store);
-    expect((await load(store)).flow).toBe('invite');
+    expect((await load(store)).flow).toBe('trial');
   });
 });
 
@@ -377,5 +379,26 @@ describe('silent recoveries are not silent', () => {
     expect(error).toHaveBeenCalledTimes(1);
     expect(error.mock.calls[0][0]).toContain('could not persist state');
     error.mockRestore();
+  });
+});
+
+describe('onboarding answers on load', () => {
+  it('keeps list answers and drops malformed ones without losing the rest', async () => {
+    const store = memoryStore();
+    await store.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...initialState(),
+        onboarding: {
+          answers: { changes: ['Mood', 'Energy'], usage: 'With a partner', broken: 3, mixed: ['ok', 1] },
+          skipped: [],
+          completed: false,
+        },
+      }),
+    );
+    expect((await load(store)).onboarding.answers).toEqual({
+      changes: ['Mood', 'Energy'],
+      usage: 'With a partner',
+    });
   });
 });

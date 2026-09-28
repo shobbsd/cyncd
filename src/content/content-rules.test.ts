@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest'
 import type { ChipId, CoachNode } from './types'
 import { DAYS, getDay } from './days'
 import { COACH_CHIPS, COACH_NODES, getCoachEntry, getCoachNode } from './coach'
-import { ONBOARDING_QUESTIONS, PARTNER_QUESTIONS } from './onboarding'
+import { ONBOARDING_STEPS, PARTNER_STEPS, PARTNERED, rhythmSummary, visibleSteps } from './onboarding'
 import { PHASE_GUIDANCE, TRAIT_GUIDANCE } from './phaseGuidance'
 import { SCORE_BANDS } from './score'
 
@@ -99,27 +99,62 @@ describe('day content structure', () => {
   })
 })
 
-describe('phase 1 onboarding content', () => {
-  it('uses the approved primary questions', () => {
-    expect(ONBOARDING_QUESTIONS).toEqual([
-      { id: 'energy', prompt: 'How does your energy usually change across the month?', options: ['Fairly steady', 'Some ups and downs', 'Big swings'] },
-      { id: 'support', prompt: "When you're feeling stretched, what usually helps?", options: ['Space', 'Reassurance', 'Practical help'] },
-      { id: 'communication', prompt: 'When something comes up between you, what do you prefer?', options: ['Talk it through soon', 'Need time first', 'Depends on the day'] },
-      { id: 'social', prompt: 'How do you usually like to spend a free evening?', options: ['At home', 'Out', 'Depends'] },
-      { id: 'cycleStart', prompt: 'When did your last period start? This stays private and helps personalise your forecast.', options: [], kind: 'date' },
-      { id: 'cycleLength', prompt: 'How long is your cycle usually?', options: ['~28 days', 'Shorter', 'Longer', 'Varies', 'Not sure'] },
-      { id: 'routine', prompt: 'When do you usually have time together?', options: ['Weekdays', 'Weekends', 'Varies'] },
-    ])
+describe('conversational onboarding content', () => {
+  const ids = (steps: typeof ONBOARDING_STEPS) => steps.map((step) => step.id)
+
+  it('asks about the relationship before the body', () => {
+    const order = ids(ONBOARDING_STEPS)
+    expect(order.indexOf('intent')).toBe(0)
+    expect(order.indexOf('usage')).toBeLessThan(order.indexOf('cycleStart'))
+    expect(order.indexOf('moreOf')).toBeLessThan(order.indexOf('cycleStart'))
   })
 
-  it('uses the approved partner questions', () => {
-    expect(PARTNER_QUESTIONS).toEqual([
-      { id: 'energy', prompt: 'How would you describe your usual energy?', options: ['Low', 'Moderate', 'High'] },
-      { id: 'communication', prompt: 'When something comes up, what do you prefer?', options: ['Talk immediately', 'Need time first'] },
-      { id: 'support', prompt: 'How do you usually support your partner?', options: ['Talk', 'Space', 'Practical help'] },
-      { id: 'social', prompt: 'How do you like to spend a free evening?', options: ['At home', 'Out', 'Depends'] },
-      { id: 'misunderstandings', prompt: 'What causes most misunderstandings between you?', options: ['Timing', 'Communication', 'Energy'] },
-    ])
+  it('keeps the Phase 1 cycle seed the forecast reads', () => {
+    expect(ONBOARDING_STEPS.find((step) => step.id === 'cycleStart')?.kind).toBe('date')
+    const length = ONBOARDING_STEPS.find((step) => step.id === 'cycleLength')
+    expect(length?.kind === 'single' && length.options).toEqual(['~28 days', 'Shorter', 'Longer', 'Varies', 'Not sure'])
+  })
+
+  it('ends on privacy and then the commitment, in both flows', () => {
+    for (const steps of [ONBOARDING_STEPS, PARTNER_STEPS]) {
+      expect(steps.slice(-2).map((step) => step.kind)).toEqual(['privacy', 'commitment'])
+    }
+  })
+
+  it('does not ask someone using Cyncd alone about the relationship', () => {
+    const solo = ids(visibleSteps(ONBOARDING_STEPS, { usage: 'By myself for now' }))
+    expect(solo).not.toContain('together')
+    expect(solo).not.toContain('moreOf')
+    const partnered = ids(visibleSteps(ONBOARDING_STEPS, { usage: PARTNERED }))
+    expect(partnered).toContain('together')
+    expect(partnered).toContain('moreOf')
+  })
+
+  it('gives the partner a short setup of their own, not the same one', () => {
+    const questions = PARTNER_STEPS.filter((step) => step.kind !== 'privacy' && step.kind !== 'commitment')
+    expect(questions.length).toBeGreaterThanOrEqual(5)
+    expect(questions.length).toBeLessThanOrEqual(7)
+    expect(PARTNER_STEPS.some((step) => step.id === 'cycleStart')).toBe(false)
+  })
+
+  it('uses unique step ids', () => {
+    for (const steps of [ONBOARDING_STEPS, PARTNER_STEPS]) {
+      expect(new Set(ids(steps)).size).toBe(steps.length)
+    }
+  })
+
+  it('reflects back what changes, and never reports "nothing" as a change', () => {
+    expect(rhythmSummary({ changes: ['Energy', 'Mood', 'Affection'] })).toBe(
+      'From what you’ve told us, your energy, mood and need for affection can change throughout the month.',
+    )
+    expect(rhythmSummary({ changes: ["Nothing I've noticed"] })).toContain('still noticing')
+  })
+
+  it('keeps onboarding copy free of the banned phrases', () => {
+    const copy = [...collect(ONBOARDING_STEPS, 'ONBOARDING_STEPS'), ...collect(PARTNER_STEPS, 'PARTNER_STEPS')]
+    for (const term of BANNED_EVERYWHERE) {
+      expect(show(copy.filter((s) => s.value.toLowerCase().includes(term)))).toEqual([])
+    }
   })
 })
 

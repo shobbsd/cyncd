@@ -2,12 +2,20 @@ import { useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
 import { StyleSheet, Text, View } from 'react-native';
 import { BrandMark } from '../components/BrandMark';
+import { FadeIn } from '../components/FadeIn';
 import { Btn, Faint, Muted } from '../components/ui';
 import { useCyncd } from '../state';
 import { color, font, radius, space, tap } from '../theme/tokens';
 
+/**
+ * The partner invitation, offered only after the person has been through Cyncd
+ * themselves — it works alone, and is better together. The code only appears
+ * once they choose to invite, so "I'll do this later" is an equal choice rather
+ * than the way out of a screen that assumed a partner.
+ */
 export function Invite() {
   const { state, actions } = useCyncd();
+  const [inviting, setInviting] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
     'idle',
   );
@@ -42,45 +50,54 @@ export function Invite() {
   return (
     <View style={styles.onboard}>
       <View style={styles.top}>
-        <BrandMark size={28} />
+        <BrandMark size={32} />
       </View>
 
-      <Text style={styles.question}>Invite your partner</Text>
-      <Muted>
-        They answer four quick questions. They never see your answers — only the
-        shared guidance for the day.
-      </Muted>
+      <FadeIn style={styles.intro}>
+        <Text style={styles.question}>Cyncd works by itself.</Text>
+        <Text style={styles.better}>It’s even better together.</Text>
+        <Muted>
+          Your partner gets their own short setup — a few questions about how
+          they show up. They never see your answers, only the shared guidance
+          for the day.
+        </Muted>
+      </FadeIn>
 
-      <View style={styles.codeRow}>
-        <Text style={styles.code}>{code}</Text>
-        <Btn
-          label={
-            copyState === 'copied'
-              ? 'Copied'
-              : copyState === 'failed'
-                ? 'Copy failed'
-                : 'Copy'
-          }
-          variant="secondary"
-          onPress={copy}
-        />
-      </View>
-
-      {copyState === 'failed' ? (
-        <Faint>
-          Copying is not available here — the code above is the whole invite, so
-          read it out or write it down.
-        </Faint>
+      {inviting ? (
+        <FadeIn style={styles.intro}>
+          <View style={styles.codeRow}>
+            <Text style={styles.code}>{code}</Text>
+            <Btn
+              label={
+                copyState === 'copied'
+                  ? 'Copied'
+                  : copyState === 'failed'
+                    ? 'Copy failed'
+                    : 'Copy'
+              }
+              variant="secondary"
+              onPress={copy}
+            />
+          </View>
+          {copyState === 'failed' ? (
+            <Faint>
+              Copying is not available here — the code above is the whole
+              invite, so read it out or write it down.
+            </Faint>
+          ) : null}
+        </FadeIn>
       ) : null}
 
       <View style={styles.answers}>
-        <Btn
-          label="Simulate partner joining"
-          block
-          onPress={actions.simulatePartnerJoin}
-        />
-        {/* The spec's invite screen has no exit, but the "partner not joined"
-            edge case needs the tabs to be reachable. This is that exit. */}
+        {inviting ? (
+          <Btn
+            label="Simulate partner joining"
+            block
+            onPress={actions.simulatePartnerJoin}
+          />
+        ) : (
+          <Btn label="Invite my partner" block onPress={() => setInviting(true)} />
+        )}
         <Btn
           label="I'll do this later"
           variant="ghost"
@@ -95,7 +112,7 @@ export function Invite() {
 const styles = StyleSheet.create({
   onboard: {
     flex: 1,
-    gap: space.lg,
+    gap: space.xl,
     padding: space.xl,
   },
   top: {
@@ -103,12 +120,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: tap,
   },
+  intro: {
+    gap: space.md,
+  },
   question: {
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: font.size.display,
+    lineHeight: 36,
     fontWeight: font.weight.bold,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
     color: color.ink,
+  },
+  better: {
+    fontSize: font.size.title,
+    lineHeight: 30,
+    fontWeight: font.weight.semibold,
+    color: color.forest,
+    marginTop: -space.sm,
   },
   codeRow: {
     flexDirection: 'row',

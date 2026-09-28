@@ -161,4 +161,4 @@ expo-env.d.ts
 # @end expo-cli
 
 .superpowers/
-docs
+docs/superpowers

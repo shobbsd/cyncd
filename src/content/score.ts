@@ -1,4 +1,10 @@
-import type { CyclePrediction, ScoreBand, ScoreResult } from './types';
+import { answerList, answerText } from './onboarding';
+import type {
+  CyclePrediction,
+  OnboardingAnswer,
+  ScoreBand,
+  ScoreResult,
+} from './types';
 
 export const SCORE_CONFIDENCE =
   'Still learning — this becomes more personal as you both share feedback.';
@@ -39,38 +45,76 @@ function average(values: number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+/**
+ * What someone wants on a hard day and what their partner reaches for, in one
+ * shared vocabulary. The two onboarding flows word these differently ("Give me
+ * space" / "Give them space"), so they meet here rather than by string match.
+ */
+const PRIMARY_SUPPORT: Record<string, string> = {
+  'Give me space': 'space',
+  'Check in with me': 'checkIn',
+  'Reassure me': 'reassure',
+  'Physical affection': 'affection',
+  'Practical help': 'practical',
+  'Distract me / make me laugh': 'lighten',
+  'Ask me what I need': 'ask',
+  'It depends': 'ask',
+};
+
+const PARTNER_SUPPORT: Record<string, string> = {
+  'Give them space': 'space',
+  'Check in': 'checkIn',
+  'Reassure them': 'reassure',
+  'Physical affection': 'affection',
+  'Practical help': 'practical',
+  'Try to lighten the mood': 'lighten',
+  'Ask what they need': 'ask',
+};
+
 function supportCompatibility(primary?: string, partner?: string): number {
   if (primary === undefined || partner === undefined) return NEUTRAL;
-  return primary === partner ? 100 : 60;
+  const wants = PRIMARY_SUPPORT[primary];
+  const offers = PARTNER_SUPPORT[partner];
+  if (wants !== undefined && wants === offers) return 100;
+  // Asking is never a mismatch — it is how the right thing gets found.
+  if (offers === 'ask') return 85;
+  return 60;
 }
+
+const PRIMARY_COMMUNICATION: Record<string, string> = {
+  'Talk about it straight away': 'talk',
+  'Need time first': 'time',
+  'Go quiet': 'time',
+  'Try to solve it myself': 'time',
+};
+
+const PARTNER_COMMUNICATION: Record<string, string> = {
+  'Talk it through straight away': 'talk',
+  'Take some time first': 'time',
+};
 
 function communicationCompatibility(primary?: string, partner?: string): number {
   if (primary === undefined || partner === undefined) return NEUTRAL;
-  if (primary === 'Depends on the day') return 70;
-  if (primary === 'Talk it through soon' && partner === 'Talk immediately') return 100;
-  if (primary === 'Need time first' && partner === 'Need time first') return 100;
-  return 50;
+  const mine = PRIMARY_COMMUNICATION[primary];
+  const theirs = PARTNER_COMMUNICATION[partner];
+  if (mine === undefined || theirs === undefined) return 70;
+  return mine === theirs ? 100 : 50;
 }
 
-function socialCompatibility(primary?: string, partner?: string): number {
-  if (primary === undefined || partner === undefined) return NEUTRAL;
-  if (primary === partner) return 100;
-  if (primary === 'Depends' || partner === 'Depends') return 75;
+/** How much of what makes each of them feel connected overlaps. */
+function connectionCompatibility(primary: string[], partner: string[]): number {
+  if (primary.length === 0 || partner.length === 0) return NEUTRAL;
+  const shared = primary.filter((option) => partner.includes(option)).length;
+  if (shared >= 2) return 100;
+  if (shared === 1) return 80;
   return 55;
 }
 
-function primaryCapacity(answer?: string): number {
-  if (answer === 'Fairly steady') return 75;
-  if (answer === 'Some ups and downs') return 60;
-  if (answer === 'Big swings') return 45;
-  return NEUTRAL;
-}
-
-function partnerCapacity(answer?: string): number {
-  if (answer === 'Moderate') return 65;
-  if (answer === 'High') return 60;
-  if (answer === 'Low') return 55;
-  return NEUTRAL;
+function primaryCapacity(changes: string[]): number {
+  if (changes.length === 0) return NEUTRAL;
+  if (changes.includes('Energy')) return 50;
+  if (changes.includes("Nothing I've noticed")) return 75;
+  return 60;
 }
 
 function phaseCapacity(cycle: CyclePrediction): number | null {
@@ -112,25 +156,30 @@ export function calculateScore({
   completedAction,
   accuracyFeedback = NEUTRAL,
 }: {
-  primaryAnswers: Record<string, string>;
-  partnerAnswers: Record<string, string>;
+  primaryAnswers: Record<string, OnboardingAnswer>;
+  partnerAnswers: Record<string, OnboardingAnswer>;
   cycle: CyclePrediction;
   completedAction: boolean;
   accuracyFeedback?: number;
 }): ScoreResult {
   const communication = clamp(
     average([
-      supportCompatibility(primaryAnswers.support, partnerAnswers.support),
+      supportCompatibility(
+        answerText(primaryAnswers.support),
+        answerText(partnerAnswers.struggling),
+      ),
       communicationCompatibility(
-        primaryAnswers.communication,
-        partnerAnswers.communication,
+        answerText(primaryAnswers.communication),
+        answerText(partnerAnswers.communication),
       ),
     ]),
   );
   const capacityInputs = [
-    socialCompatibility(primaryAnswers.social, partnerAnswers.social),
-    primaryCapacity(primaryAnswers.energy),
-    partnerCapacity(partnerAnswers.energy),
+    connectionCompatibility(
+      answerList(primaryAnswers.connection),
+      answerList(partnerAnswers.connection),
+    ),
+    primaryCapacity(answerList(primaryAnswers.changes)),
   ];
   const phase = phaseCapacity(cycle);
   if (phase !== null) capacityInputs.push(phase);

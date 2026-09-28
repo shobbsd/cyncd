@@ -5,6 +5,7 @@ import type {
   CycleLogEntry,
   Flow,
   LogEntry,
+  OnboardingAnswer,
   Reflection,
   ScoreActionCompletion,
   SharedItem,
@@ -28,14 +29,19 @@ export const STORAGE_KEY = 'cyncd.demo';
  * so a demo left mid-run as the partner would come back as the wrong person.
  * 3: Phase 1 changes onboarding data and validates persisted flow values.
  * 4: Score action completion is persisted as shared behaviour.
+ * 5: Conversational onboarding — new question ids, list answers, a name, and
+ * the `name` / `trial` flows. A v4 blob's answers would feed the score values
+ * it no longer understands.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const FLOW_IDS: Flow[] = [
   'splash',
   'signup',
+  'name',
   'onboarding',
   'learning',
+  'trial',
   'invite',
   'partnerOnboarding',
   'paired',
@@ -56,7 +62,7 @@ export function initialState(): CyncdState {
   return {
     version: SCHEMA_VERSION,
     flow: 'splash',
-    account: { email: null },
+    account: { email: null, name: null },
     onboarding: { answers: {}, skipped: [], completed: false },
     partner: { joined: false, answers: {}, inviteCode: null },
     demo: { currentDay: FIRST_DAY, simulatedDate: '2026-08-25', role: 'shanice' },
@@ -113,6 +119,23 @@ function keepValid<T>(
     );
   }
   return kept;
+}
+
+function isAnswer(value: unknown): value is OnboardingAnswer {
+  return (
+    typeof value === 'string' ||
+    (Array.isArray(value) && value.every((item) => typeof item === 'string'))
+  );
+}
+
+/** Keeps the well-formed answers; one bad value should not cost the rest. */
+function answersFrom(value: unknown): Record<string, OnboardingAnswer> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, OnboardingAnswer] =>
+      isAnswer(entry[1]),
+    ),
+  );
 }
 
 function isSavedPlan(value: unknown): value is SavedPlan {
@@ -232,11 +255,10 @@ export function reconcile(raw: unknown): CyncdState {
     flow: isFlow(raw.flow) ? raw.flow : base.flow,
     account: {
       email: typeof account.email === 'string' ? account.email : null,
+      name: typeof account.name === 'string' ? account.name : null,
     },
     onboarding: {
-      answers: isRecord(onboarding.answers)
-        ? (onboarding.answers as Record<string, string>)
-        : {},
+      answers: answersFrom(onboarding.answers),
       skipped: Array.isArray(onboarding.skipped)
         ? (onboarding.skipped as string[])
         : [],
@@ -244,9 +266,7 @@ export function reconcile(raw: unknown): CyncdState {
     },
     partner: {
       joined: partner.joined === true,
-      answers: isRecord(partner.answers)
-        ? (partner.answers as Record<string, string>)
-        : {},
+      answers: answersFrom(partner.answers),
       inviteCode:
         typeof partner.inviteCode === 'string' ? partner.inviteCode : null,
     },
@@ -291,12 +311,12 @@ export function reconcile(raw: unknown): CyncdState {
 }
 
 /**
- * `learning` and `cyncd` are timed screens driven by an animation that only
+ * `learning` and `paired` are timed screens driven by an animation that only
  * exists while the app is mounted. Rehydrating into one would strand the demo on
  * a screen with nothing to advance it, so they resolve forward on load.
  */
 export function resolveTransientFlow(state: CyncdState): CyncdState {
-  if (state.flow === 'learning') return { ...state, flow: 'invite' };
+  if (state.flow === 'learning') return { ...state, flow: 'trial' };
   if (state.flow === 'paired') return { ...state, flow: 'app' };
   return state;
 }

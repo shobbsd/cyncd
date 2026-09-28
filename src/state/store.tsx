@@ -58,6 +58,7 @@ export function CyncdProvider({ children }: { children: ReactNode }) {
     () => ({
       startSignup: () => dispatch({ type: 'startSignup' }),
       submitSignup: (email) => dispatch({ type: 'submitSignup', email }),
+      submitName: (name) => dispatch({ type: 'submitName', name }),
       answerOnboarding: (id, value) =>
         dispatch({ type: 'answerOnboarding', id, value }),
       skipOnboarding: (id) => dispatch({ type: 'skipOnboarding', id }),

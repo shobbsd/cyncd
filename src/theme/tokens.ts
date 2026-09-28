@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 /**
  * cyncd design tokens.
  *
@@ -22,6 +24,9 @@ export const color = {
   sand: '#e8dcc8',
   lavender: '#b9aec9',
   gold: '#c9a96a',
+  // The logo's green. Used for the mark itself and the splash's one action,
+  // not as a general accent — the rest of the app stays on the soft palette.
+  forest: '#1d4433',
 
   bg: '#faf8f4',
   surface: '#ffffff',
@@ -101,6 +106,11 @@ export const space = {
  */
 export const font = {
   family: 'System',
+  /**
+   * The CYNCD wordmark is set in Times New Roman. iOS ships it under that
+   * name; Android has no Times, and `serif` is its closest system face.
+   */
+  wordmark: Platform.select({ ios: 'Times New Roman', default: 'serif' }),
   size: {
     display: 28,
     title: 22,

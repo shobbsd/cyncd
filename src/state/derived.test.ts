@@ -90,10 +90,10 @@ describe('score and phase guidance', () => {
       answers: {
         cycleStart: '2026-08-01',
         cycleLength: '~28 days',
-        support: 'Space',
+        support: 'Give me space',
         communication: 'Need time first',
-        energy: 'Fairly steady',
-        social: 'At home',
+        changes: ['Mood'],
+        connection: ['Talking'],
       },
       skipped: [],
       completed: true,
@@ -102,10 +102,9 @@ describe('score and phase guidance', () => {
       joined: true,
       inviteCode: 'cyncd-ABC234',
       answers: {
-        support: 'Space',
-        communication: 'Need time first',
-        energy: 'Moderate',
-        social: 'At home',
+        struggling: 'Give them space',
+        communication: 'Take some time first',
+        connection: ['Talking'],
       },
     },
   });

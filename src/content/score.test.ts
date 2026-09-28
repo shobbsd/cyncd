@@ -34,16 +34,15 @@ describe('calculateScore', () => {
   it('raises the behaviour component when the shared action is completed', () => {
     const input = {
       primaryAnswers: {
-        support: 'Space',
+        support: 'Give me space',
         communication: 'Need time first',
-        energy: 'Fairly steady',
-        social: 'At home',
+        changes: ['Mood'],
+        connection: ['Talking', 'Quality time'],
       },
       partnerAnswers: {
-        support: 'Space',
-        communication: 'Need time first',
-        energy: 'Moderate',
-        social: 'At home',
+        struggling: 'Give them space',
+        communication: 'Take some time first',
+        connection: ['Talking'],
       },
       cycle: { kind: 'unavailable' } as const,
     }
@@ -53,5 +52,38 @@ describe('calculateScore', () => {
 
     expect(complete.components.completedAction).toBe(100)
     expect(complete.percentage).toBeGreaterThan(pending.percentage)
+  })
+})
+
+describe('compatibility across the two onboarding vocabularies', () => {
+  const base = { cycle: { kind: 'unavailable' } as const, completedAction: false }
+
+  it('matches "Give me space" with "Give them space" rather than by string', () => {
+    const matched = calculateScore({
+      ...base,
+      primaryAnswers: { support: 'Give me space', communication: 'Need time first' },
+      partnerAnswers: { struggling: 'Give them space', communication: 'Take some time first' },
+    })
+    const mismatched = calculateScore({
+      ...base,
+      primaryAnswers: { support: 'Give me space', communication: 'Talk about it straight away' },
+      partnerAnswers: { struggling: 'Practical help', communication: 'Take some time first' },
+    })
+    expect(matched.components.communication).toBe(100)
+    expect(mismatched.components.communication).toBeLessThan(matched.components.communication)
+  })
+
+  it('scores shared connection preferences above none in common', () => {
+    const shared = calculateScore({
+      ...base,
+      primaryAnswers: { connection: ['Talking', 'Quality time'] },
+      partnerAnswers: { connection: ['Talking', 'Quality time'] },
+    })
+    const apart = calculateScore({
+      ...base,
+      primaryAnswers: { connection: ['Talking'] },
+      partnerAnswers: { connection: ['Acts of care'] },
+    })
+    expect(shared.components.energyAndCapacity).toBeGreaterThan(apart.components.energyAndCapacity)
   })
 })
